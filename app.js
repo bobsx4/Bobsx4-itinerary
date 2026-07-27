@@ -1,25 +1,28 @@
 (() => {
   "use strict";
 
-  const TRIP = window.ROAD_TRIP;
-  const STORAGE_KEY = "northwest-road-trip-2026-state-v1";
+  const DATA = window.BOBSX4_DATA;
+  if (!DATA || !DATA.app || !Array.isArray(DATA.adventures)) {
+    document.body.innerHTML = "<main style='padding:2rem;font-family:system-ui'>Road Companion data could not be loaded.</main>";
+    return;
+  }
+
+  const APP = DATA.app;
+  const STORAGE_KEY = "bobsx4-road-companion-state-v3";
+  const LEGACY_STORAGE_KEYS = ["northwest-road-trip-2026-state-v1"];
   const MS_PER_DAY = 86400000;
-  const VALID_VIEWS = ["home", "itinerary", "route", "lists", "more"];
-  const defaultState = {
-    schema: 1,
-    checks: {},
-    completedDays: {},
-    hotels: clone(TRIP.reservations || {}),
-    notes: { general: "", daily: {} },
-    customItems: { shopping: [], packing: [], border: [] },
-    activeList: "shopping"
-  };
+  const VALID_VIEWS = ["home", "trip", "adventure", "memories", "settings"];
+  const VALID_TRIP_TABS = ["days", "route", "stays", "lists"];
+  const JOURNAL_FIELDS = ["favorite", "ate", "bought", "surprise", "note"];
 
   let state = loadState();
   let itineraryFilter = "all";
+  let activeTripTab = "days";
   let deferredInstallPrompt = null;
   let toastTimer = null;
-  let noteSaveTimer = null;
+  let journalSaveTimer = null;
+  let notesSaveTimer = null;
+  const expandedDays = new Set();
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -28,12 +31,74 @@
     return JSON.parse(JSON.stringify(value));
   }
 
-  function mergeState(saved) {
-    const next = clone(defaultState);
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function sanitizeUrl(url) {
+    if (!url) return "";
+    try {
+      const parsed = new URL(url, window.location.href);
+      if (!["http:", "https:", "tel:"].includes(parsed.protocol)) return "";
+      return parsed.href;
+    } catch {
+      return "";
+    }
+  }
+
+  function makeProfileProgress() {
+    return { days: {} };
+  }
+
+  function makeAdventureState(adventure) {
+    const profileProgress = {};
+    DATA.defaultProfiles.forEach((profile) => {
+      profileProgress[profile.id] = makeProfileProgress();
+    });
+    return {
+      checks: {},
+      completedDays: {},
+      hotels: clone(adventure.reservations || {}),
+      notes: { general: "", daily: {} },
+      customItems: { shopping: [], packing: [], border: [] },
+      activeList: "shopping",
+      selectedAdventureDayId: null,
+      profileProgress
+    };
+  }
+
+  function buildDefaultState() {
+    const profiles = {};
+    DATA.defaultProfiles.forEach((profile) => {
+      profiles[profile.id] = clone(profile);
+    });
+    const adventures = {};
+    DATA.adventures.forEach((adventure) => {
+      adventures[adventure.id] = makeAdventureState(adventure);
+    });
+    return {
+      schema: APP.dataSchema,
+      activeAdventureId: DATA.adventures[0].id,
+      activeProfileId: DATA.defaultProfiles[0].id,
+      profiles,
+      adventures
+    };
+  }
+
+  function mergeAdventureState(base, saved, adventure) {
+    const next = clone(base);
     if (!saved || typeof saved !== "object") return next;
     next.checks = saved.checks && typeof saved.checks === "object" ? saved.checks : {};
     next.completedDays = saved.completedDays && typeof saved.completedDays === "object" ? saved.completedDays : {};
-    next.hotels = { ...(TRIP.reservations || {}), ...(saved.hotels && typeof saved.hotels === "object" ? saved.hotels : {}) };
+    next.hotels = {
+      ...(adventure.reservations || {}),
+      ...(saved.hotels && typeof saved.hotels === "object" ? saved.hotels : {})
+    };
     next.notes = {
       general: saved.notes && typeof saved.notes.general === "string" ? saved.notes.general : "",
       daily: saved.notes && saved.notes.daily && typeof saved.notes.daily === "object" ? saved.notes.daily : {}
@@ -44,35 +109,161 @@
       border: saved.customItems && Array.isArray(saved.customItems.border) ? saved.customItems.border : []
     };
     next.activeList = ["shopping", "packing", "border"].includes(saved.activeList) ? saved.activeList : "shopping";
+    next.selectedAdventureDayId = adventure.days.some((day) => day.id === saved.selectedAdventureDayId)
+      ? saved.selectedAdventureDayId
+      : null;
+    next.profileProgress = {};
+    Object.keys(stateProfileTemplates()).forEach((profileId) => {
+      const savedProgress = saved.profileProgress && saved.profileProgress[profileId];
+      next.profileProgress[profileId] = {
+        days: savedProgress && savedProgress.days && typeof savedProgress.days === "object" ? savedProgress.days : {}
+      };
+    });
+    return next;
+  }
+
+  function stateProfileTemplates() {
+    const profiles = {};
+    DATA.defaultProfiles.forEach((profile) => { profiles[profile.id] = profile; });
+    return profiles;
+  }
+
+  function mergeState(saved) {
+    const next = buildDefaultState();
+    if (!saved || typeof saved !== "object") return next;
+
+    next.activeAdventureId = DATA.adventures.some((adventure) => adventure.id === saved.activeAdventureId)
+      ? saved.activeAdventureId
+      : next.activeAdventureId;
+
+    next.profiles = {};
+    DATA.defaultProfiles.forEach((profile) => {
+      const savedProfile = saved.profiles && saved.profiles[profile.id];
+      next.profiles[profile.id] = {
+        ...clone(profile),
+        ...(savedProfile && typeof savedProfile === "object" ? savedProfile : {})
+      };
+      if (!["navigator", "explorer"].includes(next.profiles[profile.id].experience)) {
+        next.profiles[profile.id].experience = profile.experience;
+      }
+    });
+
+    next.activeProfileId = next.profiles[saved.activeProfileId]
+      ? saved.activeProfileId
+      : DATA.defaultProfiles[0].id;
+
+    DATA.adventures.forEach((adventure) => {
+      next.adventures[adventure.id] = mergeAdventureState(
+        next.adventures[adventure.id],
+        saved.adventures && saved.adventures[adventure.id],
+        adventure
+      );
+    });
+
+    return next;
+  }
+
+  function migrateLegacyState(legacy) {
+    if (!legacy || typeof legacy !== "object") return null;
+    const next = buildDefaultState();
+    const adventure = DATA.adventures[0];
+    const adventureState = next.adventures[adventure.id];
+    adventureState.checks = legacy.checks && typeof legacy.checks === "object" ? legacy.checks : {};
+    adventureState.completedDays = legacy.completedDays && typeof legacy.completedDays === "object" ? legacy.completedDays : {};
+    adventureState.hotels = {
+      ...(adventure.reservations || {}),
+      ...(legacy.hotels && typeof legacy.hotels === "object" ? legacy.hotels : {})
+    };
+    adventureState.notes = {
+      general: legacy.notes && typeof legacy.notes.general === "string" ? legacy.notes.general : "",
+      daily: legacy.notes && legacy.notes.daily && typeof legacy.notes.daily === "object" ? legacy.notes.daily : {}
+    };
+    adventureState.customItems = {
+      shopping: legacy.customItems && Array.isArray(legacy.customItems.shopping) ? legacy.customItems.shopping : [],
+      packing: legacy.customItems && Array.isArray(legacy.customItems.packing) ? legacy.customItems.packing : [],
+      border: legacy.customItems && Array.isArray(legacy.customItems.border) ? legacy.customItems.border : []
+    };
+    adventureState.activeList = ["shopping", "packing", "border"].includes(legacy.activeList) ? legacy.activeList : "shopping";
     return next;
   }
 
   function loadState() {
     try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-      return mergeState(saved);
+      const current = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if (current) return mergeState(current);
     } catch (error) {
-      console.warn("Could not read saved trip data", error);
-      return clone(defaultState);
+      console.warn("Could not read current Road Companion state", error);
     }
+
+    for (const key of LEGACY_STORAGE_KEYS) {
+      try {
+        const legacy = JSON.parse(localStorage.getItem(key));
+        const migrated = migrateLegacyState(legacy);
+        if (migrated) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+          return migrated;
+        }
+      } catch (error) {
+        console.warn(`Could not migrate ${key}`, error);
+      }
+    }
+    return buildDefaultState();
   }
 
   function saveState() {
     try {
+      state.schema = APP.dataSchema;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (error) {
-      console.error("Could not save trip data", error);
+      console.error("Could not save Road Companion state", error);
       showToast("This browser could not save the latest change.");
     }
   }
 
-  function escapeHtml(value) {
-    return String(value ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+  function getAdventure() {
+    return DATA.adventures.find((adventure) => adventure.id === state.activeAdventureId) || DATA.adventures[0];
+  }
+
+  function getAdventureState() {
+    const adventure = getAdventure();
+    if (!state.adventures[adventure.id]) state.adventures[adventure.id] = makeAdventureState(adventure);
+    return state.adventures[adventure.id];
+  }
+
+  function getProfile() {
+    return state.profiles[state.activeProfileId] || state.profiles[DATA.defaultProfiles[0].id];
+  }
+
+  function ensureProfileProgress(profileId = state.activeProfileId) {
+    const adventureState = getAdventureState();
+    if (!adventureState.profileProgress[profileId]) adventureState.profileProgress[profileId] = makeProfileProgress();
+    return adventureState.profileProgress[profileId];
+  }
+
+  function emptyDayProgress() {
+    return {
+      missions: {},
+      sightings: {},
+      journal: { rating: 0, favorite: "", ate: "", bought: "", surprise: "", note: "" },
+      photoDone: false,
+      badgeClaimed: false
+    };
+  }
+
+  function getDayProgress(dayId, profileId = state.activeProfileId, create = true) {
+    const profileProgress = ensureProfileProgress(profileId);
+    if (!profileProgress.days[dayId] && create) profileProgress.days[dayId] = emptyDayProgress();
+    const progress = profileProgress.days[dayId] || emptyDayProgress();
+    if (!progress.missions || typeof progress.missions !== "object") progress.missions = {};
+    if (!progress.sightings || typeof progress.sightings !== "object") progress.sightings = {};
+    if (!progress.journal || typeof progress.journal !== "object") progress.journal = emptyDayProgress().journal;
+    JOURNAL_FIELDS.forEach((field) => {
+      if (typeof progress.journal[field] !== "string") progress.journal[field] = "";
+    });
+    if (!Number.isFinite(Number(progress.journal.rating))) progress.journal.rating = 0;
+    progress.photoDone = Boolean(progress.photoDone);
+    progress.badgeClaimed = Boolean(progress.badgeClaimed);
+    return progress;
   }
 
   function parseDate(iso) {
@@ -109,20 +300,22 @@
   }
 
   function getTripPhase() {
+    const adventure = getAdventure();
     const today = todayLocal();
-    const start = parseDate(TRIP.startDate);
-    const end = parseDate(TRIP.endDate);
+    const start = parseDate(adventure.startDate);
+    const end = parseDate(adventure.endDate);
     if (today < start) return "before";
     if (today > end) return "after";
     return "during";
   }
 
   function getCurrentOrNextDay() {
+    const adventure = getAdventure();
     const today = todayLocal();
-    const exact = TRIP.days.find((day) => sameDate(parseDate(day.date), today));
+    const exact = adventure.days.find((day) => sameDate(parseDate(day.date), today));
     if (exact) return exact;
-    const upcoming = TRIP.days.find((day) => parseDate(day.date) > today);
-    return upcoming || TRIP.days[TRIP.days.length - 1];
+    const upcoming = adventure.days.find((day) => parseDate(day.date) > today);
+    return upcoming || adventure.days[adventure.days.length - 1];
   }
 
   function getDayStatus(day) {
@@ -133,7 +326,34 @@
     return "future";
   }
 
-  function showToast(message, duration = 2600) {
+  function dayIndex(dayOrId) {
+    const adventure = getAdventure();
+    const id = typeof dayOrId === "string" ? dayOrId : dayOrId.id;
+    return adventure.days.findIndex((day) => day.id === id);
+  }
+
+  function getSelectedAdventureDay() {
+    const adventure = getAdventure();
+    const adventureState = getAdventureState();
+    const saved = adventure.days.find((day) => day.id === adventureState.selectedAdventureDayId);
+    if (saved) return saved;
+    const fallback = getCurrentOrNextDay();
+    adventureState.selectedAdventureDayId = fallback.id;
+    return fallback;
+  }
+
+  function selectAdventureDay(dayId, options = {}) {
+    const adventure = getAdventure();
+    if (!adventure.days.some((day) => day.id === dayId)) return;
+    getAdventureState().selectedAdventureDayId = dayId;
+    saveState();
+    renderAdventure();
+    if (options.scroll !== false) {
+      requestAnimationFrame(() => $("#mission-briefing")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
+  }
+
+  function showToast(message, duration = 2800) {
     const toast = $("#toast");
     if (!toast) return;
     toast.textContent = message;
@@ -152,7 +372,23 @@
       else button.removeAttribute("aria-current");
     });
     history.replaceState(null, "", `#${view}`);
-    if (!options.keepScroll) window.scrollTo({ top: 0, behavior: "smooth" });
+    if (!options.keepScroll) {
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+    if (view === "adventure") renderAdventure();
+    if (view === "memories") renderMemories();
+    if (view === "settings") renderSettings();
+  }
+
+  function setTripTab(tab) {
+    if (!VALID_TRIP_TABS.includes(tab)) tab = "days";
+    activeTripTab = tab;
+    $$('[data-trip-tab]').forEach((button) => button.setAttribute("aria-selected", String(button.dataset.tripTab === tab)));
+    $$('[data-trip-pane]').forEach((pane) => pane.classList.toggle("active", pane.dataset.tripPane === tab));
+    if (tab === "route") renderRoute();
+    if (tab === "stays") renderHotels();
+    if (tab === "lists") renderChecklist();
   }
 
   function googleDirections(stops) {
@@ -178,20 +414,36 @@
     return `https://www.google.com/maps/search/?${params.toString()}`;
   }
 
-  function dayIndex(day) {
-    return TRIP.days.findIndex((item) => item.id === day.id);
+  function hotelHasContent(hotel) {
+    return Boolean(hotel && [hotel.name, hotel.address, hotel.confirmation, hotel.phone, hotel.website, hotel.notes].some((value) => String(value || "").trim()));
   }
 
-  function hotelRouteLabel(hotel, fallback) {
-    return hotel && (hotel.name || hotel.address) ? (hotel.name || hotel.address) : fallback;
+  function resolveHotel(dayId, visited = new Set()) {
+    const adventure = getAdventure();
+    const adventureState = getAdventureState();
+    const day = adventure.days.find((item) => item.id === dayId);
+    if (!day || visited.has(dayId)) return { hotel: null, inherited: false, sourceDayId: null };
+    visited.add(dayId);
+    const explicit = adventureState.hotels[dayId];
+    if (hotelHasContent(explicit)) return { hotel: explicit, inherited: false, sourceDayId: dayId };
+    const index = dayIndex(dayId);
+    if (index > 0) {
+      const previous = adventure.days[index - 1];
+      if (previous.overnight === day.overnight) {
+        const resolved = resolveHotel(previous.id, visited);
+        if (resolved.hotel) return { hotel: resolved.hotel, inherited: true, sourceDayId: resolved.sourceDayId };
+      }
+    }
+    return { hotel: explicit || null, inherited: false, sourceDayId: dayId };
   }
 
   function effectiveStops(day) {
     const stops = [...(day.stops || [day.start, day.end])];
+    const adventure = getAdventure();
     const index = dayIndex(day);
-    const previousDay = index > 0 ? TRIP.days[index - 1] : null;
-    const previousHotel = previousDay ? state.hotels[previousDay.id] : null;
-    const destinationHotel = state.hotels[day.id];
+    const previousDay = index > 0 ? adventure.days[index - 1] : null;
+    const previousHotel = previousDay ? resolveHotel(previousDay.id).hotel : null;
+    const destinationHotel = resolveHotel(day.id).hotel;
     if (stops.length) {
       if (previousHotel && previousHotel.address) stops[0] = previousHotel.address;
       if (destinationHotel && destinationHotel.address && day.overnight !== "Home") stops[stops.length - 1] = destinationHotel.address;
@@ -200,381 +452,491 @@
   }
 
   function effectiveEndpoints(day) {
+    const adventure = getAdventure();
     const index = dayIndex(day);
-    const previousDay = index > 0 ? TRIP.days[index - 1] : null;
-    const previousHotel = previousDay ? state.hotels[previousDay.id] : null;
-    const destinationHotel = state.hotels[day.id];
+    const previousDay = index > 0 ? adventure.days[index - 1] : null;
+    const previousHotel = previousDay ? resolveHotel(previousDay.id).hotel : null;
+    const destinationHotel = resolveHotel(day.id).hotel;
     return {
-      start: hotelRouteLabel(previousHotel, day.start),
-      end: day.overnight === "Home" ? day.end : hotelRouteLabel(destinationHotel, day.end),
-      usesHotel: Boolean((previousHotel && previousHotel.address) || (destinationHotel && destinationHotel.address))
+      start: previousHotel && previousHotel.address ? previousHotel.address : day.start,
+      end: day.overnight === "Home" ? day.end : (destinationHotel && destinationHotel.address ? destinationHotel.address : day.end)
     };
   }
 
-  function renderStats() {
-    $("#trip-stats").innerHTML = TRIP.stats
-      .map((stat) => `<div class="stat-item"><strong>${escapeHtml(stat.value)}</strong><span>${escapeHtml(stat.label)}</span></div>`)
-      .join("");
-    $("#hero-subtitle").textContent = TRIP.subtitle;
-    $("#app-version").textContent = TRIP.version;
-    const headerVersion = $("#header-version");
-    if (headerVersion) headerVersion.textContent = TRIP.version;
-    const buildDate = $("#build-date");
-    if (buildDate) buildDate.textContent = TRIP.buildDate || "";
+  function renderHeader() {
+    const profile = getProfile();
+    $("#header-version").textContent = APP.version;
+    $("#app-version").textContent = APP.version;
+    $("#build-date").textContent = APP.buildDate;
+    $("#profile-name").textContent = profile.name;
+    $("#profile-initials").textContent = (profile.name || profile.initials || "?").trim().slice(0, 1).toUpperCase();
+    $("#profile-initials").style.background = profile.experience === "explorer" ? "var(--teal-soft)" : "var(--indigo-soft)";
+    $("#profile-initials").style.color = profile.experience === "explorer" ? "var(--teal)" : "var(--indigo)";
+  }
+
+  function renderHome() {
+    const adventure = getAdventure();
+    $("#home-title").textContent = adventure.title;
+    $("#hero-subtitle").textContent = adventure.subtitle;
+    renderHomeStats();
+    renderCountdown();
+    renderNextDay();
+    renderHomeProfileProgress();
+    renderReadiness();
+  }
+
+  function renderHomeStats() {
+    const adventure = getAdventure();
+    const totalKm = adventure.days.reduce((sum, day) => sum + Number(day.distanceKm || 0), 0);
+    const regions = new Set(adventure.routeOverview.map((point) => point.region).filter(Boolean));
+    const stats = [
+      { value: adventure.days.length, label: "travel days" },
+      { value: adventure.days.filter((day) => day.overnight !== "Home").length, label: "nights" },
+      { value: totalKm.toLocaleString("en-CA"), label: "planned km" },
+      { value: regions.size, label: "regions" }
+    ];
+    $("#home-stats").innerHTML = stats.map((stat) => `<div class="stat-item"><strong>${escapeHtml(stat.value)}</strong><span>${escapeHtml(stat.label)}</span></div>`).join("");
   }
 
   function renderCountdown() {
+    const adventure = getAdventure();
     const phase = getTripPhase();
     const today = todayLocal();
-    const start = parseDate(TRIP.startDate);
-    const end = parseDate(TRIP.endDate);
+    const start = parseDate(adventure.startDate);
+    const end = parseDate(adventure.endDate);
     const label = $("#trip-state-label");
     const card = $("#countdown-card");
 
     if (phase === "before") {
       const days = Math.max(0, daysBetween(today, start));
       label.textContent = `${days} day${days === 1 ? "" : "s"} to departure`;
-      card.innerHTML = `
-        <div class="countdown-number">${days}</div>
-        <div class="countdown-copy">
-          <strong>${days === 1 ? "Departure is tomorrow" : "Departure countdown"}</strong>
-          <span>Leave Edmonton at 6:00 PM on Thursday, July 30.</span>
-        </div>`;
+      card.innerHTML = `<div class="countdown-number">${days}</div><div class="countdown-copy"><strong>${days === 0 ? "Departure day" : days === 1 ? "Departure is tomorrow" : "Departure countdown"}</strong><span>Leave Edmonton at 6:00 PM on Thursday, July 30.</span></div>`;
     } else if (phase === "during") {
       const tripDay = daysBetween(start, today) + 1;
       const remaining = Math.max(0, daysBetween(today, end));
-      label.textContent = `Trip day ${tripDay}`;
-      card.innerHTML = `
-        <div class="countdown-number">${tripDay}</div>
-        <div class="countdown-copy">
-          <strong>Today is road-trip day ${tripDay}</strong>
-          <span>${remaining === 0 ? "Home day." : `${remaining} day${remaining === 1 ? "" : "s"} remain after today.`}</span>
-        </div>`;
+      label.textContent = `Adventure day ${tripDay}`;
+      card.innerHTML = `<div class="countdown-number">${tripDay}</div><div class="countdown-copy"><strong>Today is adventure day ${tripDay}</strong><span>${remaining === 0 ? "Home day." : `${remaining} day${remaining === 1 ? "" : "s"} remain after today.`}</span></div>`;
     } else {
-      label.textContent = "Trip complete";
-      card.innerHTML = `
-        <div class="countdown-number">10</div>
-        <div class="countdown-copy">
-          <strong>The loop is complete</strong>
-          <span>Keep the notes and checkmarks as a trip record, or export a final backup.</span>
-        </div>`;
+      label.textContent = "Adventure complete";
+      card.innerHTML = `<div class="countdown-number">✓</div><div class="countdown-copy"><strong>The loop is complete</strong><span>The itinerary is now a scrapbook. Keep the journals, badges, and sightings as the permanent record.</span></div>`;
     }
   }
 
   function renderNextDay() {
     const day = getCurrentOrNextDay();
     const parts = dateParts(day.date);
-    const status = getDayStatus(day);
-    const actionLabel = status === "current" ? "Open today's plan" : status === "past" ? "Open final day" : "Open this day";
     $("#next-day-card").innerHTML = `
-      <article class="next-card">
-        <div class="next-card-top">
-          <div class="date-tile"><span>${escapeHtml(parts.month)}</span><strong>${escapeHtml(parts.day)}</strong></div>
-          <div class="next-card-copy">
+      <article class="next-day">
+        <div class="next-day-head">
+          <div>
+            <span class="section-kicker">${escapeHtml(formatDate(day.date, { weekday: "long" }))}</span>
             <h3>${escapeHtml(day.title)}</h3>
-            <p>${escapeHtml(day.summary)}</p>
-            <div class="route-line-text"><span>${escapeHtml(effectiveEndpoints(day).start)}</span><span class="route-arrow">to</span><span>${escapeHtml(effectiveEndpoints(day).end)}</span></div>
-            <button class="text-button" type="button" data-open-day="${escapeHtml(day.id)}">${actionLabel}</button>
           </div>
+          <div class="next-day-date"><span>${escapeHtml(parts.month)}</span><strong>${escapeHtml(parts.day)}</strong></div>
         </div>
-        <div class="next-card-meta">
-          <span><strong>${escapeHtml(day.distanceKm ? `${day.distanceKm} km` : "Local")}</strong>Distance</span>
-          <span><strong>${escapeHtml(day.driveTime)}</strong>Drive estimate</span>
-        </div>
+        <p>${escapeHtml(day.summary)}</p>
+        <div class="route-meta"><span class="meta-pill">${escapeHtml(day.distanceKm)} km</span><span class="meta-pill">${escapeHtml(day.driveTime)}</span><span class="meta-pill">Night: ${escapeHtml(day.overnight)}</span></div>
       </article>`;
   }
 
-  function getReadiness() {
-    const hotelDays = TRIP.days.filter((day) => day.overnight !== "Home");
-    const reminderDone = TRIP.reminders.filter((item) => state.checks[`reminder:${item.id}`]).length;
-    const hotelsDone = hotelDays.filter((day) => state.hotels[day.id] && state.hotels[day.id].name).length;
-    const total = TRIP.reminders.length + hotelDays.length;
-    const done = reminderDone + hotelsDone;
-    return { done, total, percent: total ? Math.round((done / total) * 100) : 0 };
+  function profileMetrics(profileId = state.activeProfileId) {
+    const adventure = getAdventure();
+    const profileProgress = ensureProfileProgress(profileId);
+    let sightings = 0;
+    let missions = 0;
+    let journals = 0;
+    let ratings = 0;
+    let dayBadges = 0;
+    adventure.days.forEach((day) => {
+      const progress = getDayProgress(day.id, profileId, false);
+      sightings += Object.values(progress.sightings || {}).reduce((sum, value) => sum + Math.max(0, Number(value) || 0), 0);
+      missions += Object.values(progress.missions || {}).filter(Boolean).length;
+      if (journalHasContent(progress.journal)) journals += 1;
+      if (Number(progress.journal.rating) > 0) ratings += 1;
+      if (progress.badgeClaimed) dayBadges += 1;
+    });
+    return { sightings, missions, journals, ratings, dayBadges, days: profileProgress.days };
   }
 
-  function renderReminders() {
-    $("#reminders-list").innerHTML = TRIP.reminders
-      .map((item) => {
-        const key = `reminder:${item.id}`;
-        return `<div class="compact-check">
-          <input id="${key}" type="checkbox" data-check-key="${key}" ${state.checks[key] ? "checked" : ""}>
-          <label for="${key}">${escapeHtml(item.text)}</label>
-        </div>`;
-      })
-      .join("");
-    updateReadiness();
+  function earnedGlobalBadges(profileId = state.activeProfileId) {
+    const metrics = profileMetrics(profileId);
+    return DATA.globalBadges.filter((badge) => Number(metrics[badge.type]) >= Number(badge.threshold));
   }
 
-  function updateReadiness() {
-    const readiness = getReadiness();
-    $("#readiness-label").textContent = `${readiness.percent}%`;
-    $("#readiness-bar").style.width = `${readiness.percent}%`;
+  function renderHomeProfileProgress() {
+    const profile = getProfile();
+    const metrics = profileMetrics();
+    const totalBadges = getAdventure().days.length + DATA.globalBadges.length;
+    const earned = metrics.dayBadges + earnedGlobalBadges().length;
+    const percent = totalBadges ? Math.round((earned / totalBadges) * 100) : 0;
+    $("#profile-progress").innerHTML = `
+      <div class="profile-progress-card">
+        <div class="profile-progress-avatar">${escapeHtml((profile.name || "?").slice(0,1).toUpperCase())}</div>
+        <div class="profile-progress-copy"><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(profile.roleLabel || (profile.experience === "navigator" ? "Independent traveller" : "Visual explorer"))}</span><div class="mini-progress"><i style="width:${percent}%"></i></div><span>${earned} of ${totalBadges} badges · ${metrics.sightings} sightings</span></div>
+      </div>`;
   }
 
-  function timelineHtml(items) {
-    return `<div class="timeline">${items
-      .map(
-        (item) => `<div class="timeline-item">
-          <div class="timeline-time">${escapeHtml(item.time)}</div>
-          <div class="timeline-copy"><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.detail)}</span></div>
-        </div>`
-      )
-      .join("")}</div>`;
+  function flattenChecklist(listName) {
+    const adventure = getAdventure();
+    if (listName === "border") return (adventure.borderChecklist || []).map((item) => ({ ...item, category: "Border return" }));
+    return (adventure[listName] || []).flatMap((group) => group.items.map((item) => ({ ...item, category: group.category })));
   }
 
-  function listHtml(items) {
-    return `<ul class="clean-list">${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+  function checkKey(listName, itemId) {
+    return `${listName}:${itemId}`;
   }
 
-  function dayCardHtml(day, index) {
-    const completed = Boolean(state.completedDays[day.id]);
-    const status = getDayStatus(day);
-    const hotel = state.hotels[day.id] || {};
-    const hotelSummary = day.overnight === "Home"
-      ? "Home"
-      : hotel.name
-        ? `${hotel.name}${hotel.confirmation ? ` - confirmation saved` : ""}`
-        : `Not entered - ${day.hotelHint}`;
-    const dailyNote = state.notes.daily[day.id] || "";
-    const open = status === "current" || (getTripPhase() === "before" && index === 0);
-    return `<details class="day-card ${completed ? "completed" : ""} ${status === "current" ? "current" : ""}" data-day-id="${escapeHtml(day.id)}" data-tone="${escapeHtml(day.tone)}" ${open ? "open" : ""}>
-      <summary>
-        <div class="day-number">${index + 1}</div>
-        <div class="day-summary-copy">
-          <strong>${escapeHtml(day.shortDate)} - ${escapeHtml(day.title)}</strong>
-          <span>${escapeHtml(day.distanceKm ? `${day.distanceKm} km` : "Local day")} - ${escapeHtml(day.overnight)}</span>
-        </div>
-        <span class="day-summary-badge">Done</span>
-      </summary>
-      <div class="day-body">
-        <div class="day-hero">
-          <p>${escapeHtml(day.summary)}</p>
-          <div class="route-line-text"><span>${escapeHtml(effectiveEndpoints(day).start)}</span><span class="route-arrow">to</span><span>${escapeHtml(effectiveEndpoints(day).end)}</span></div>
-          <div class="meta-grid">
-            <div class="meta-box"><span>Distance</span><strong>${escapeHtml(day.distanceKm ? `${day.distanceKm} km` : "Local")}</strong></div>
-            <div class="meta-box"><span>Driving</span><strong>${escapeHtml(day.driveTime)}</strong></div>
-            <div class="meta-box"><span>Leave</span><strong>${escapeHtml(day.departure)}</strong></div>
-            <div class="meta-box"><span>Overnight</span><strong>${escapeHtml(day.overnight)}</strong></div>
-          </div>
-        </div>
-
-        <div class="day-section">
-          <div class="day-section-title">Plan</div>
-          ${timelineHtml(day.timeline)}
-        </div>
-
-        <div class="day-section">
-          <div class="day-section-title">Must do</div>
-          ${listHtml(day.mustDo)}
-        </div>
-
-        ${day.optional.length ? `<div class="day-section"><div class="day-section-title">If time allows</div>${listHtml(day.optional)}</div>` : ""}
-
-        ${day.alerts.map((alert) => `<div class="alert-box">${escapeHtml(alert)}</div>`).join("")}
-
-        <div class="day-section">
-          <div class="day-section-title">Stay</div>
-          <p class="supporting-copy">${escapeHtml(hotelSummary)}</p>
-        </div>
-
-        <div class="day-actions">
-          <a class="primary-button" href="${escapeHtml(googleDirections(effectiveStops(day)))}" target="_blank" rel="noopener">Google Maps</a>
-          <a class="secondary-button" href="${escapeHtml(appleDirections(effectiveStops(day)[0], effectiveStops(day).at(-1)))}" target="_blank" rel="noopener">Apple Maps</a>
-          ${day.overnight !== "Home" ? `<button class="secondary-button full-row" type="button" data-edit-hotel="${escapeHtml(day.id)}">Edit this stay</button>` : ""}
-        </div>
-
-        <div class="day-section daily-notes-section">
-          <label class="day-section-title" for="note-${escapeHtml(day.id)}">Day notes</label>
-          <textarea id="note-${escapeHtml(day.id)}" class="daily-notes" data-daily-note="${escapeHtml(day.id)}" rows="3" placeholder="Parking details, favourite moment, change of plan...">${escapeHtml(dailyNote)}</textarea>
-        </div>
-
-        <div class="day-complete-row">
-          <span class="supporting-copy">${escapeHtml(day.timeZoneNote)}</span>
-          <label><input type="checkbox" data-complete-day="${escapeHtml(day.id)}" ${completed ? "checked" : ""}> Day done</label>
-        </div>
-      </div>
-    </details>`;
-  }
-
-  function filteredDays() {
-    if (itineraryFilter === "upcoming") {
-      return TRIP.days.filter((day) => ["current", "future"].includes(getDayStatus(day)));
-    }
-    if (itineraryFilter === "incomplete") {
-      return TRIP.days.filter((day) => !state.completedDays[day.id]);
-    }
-    return TRIP.days;
+  function renderReadiness() {
+    const adventure = getAdventure();
+    const adventureState = getAdventureState();
+    const items = [...flattenChecklist("packing"), ...flattenChecklist("border")];
+    const completed = items.filter((item) => adventureState.checks[checkKey(item.category === "Border return" ? "border" : "packing", item.id)]).length;
+    const percent = items.length ? Math.round((completed / items.length) * 100) : 0;
+    $("#readiness-label").textContent = `${percent}%`;
+    $("#readiness-bar").style.width = `${percent}%`;
+    $("#reminders-list").innerHTML = (adventure.reminders || []).slice(0, 4).map((reminder) => `<div class="compact-item"><span class="dot"></span><span>${escapeHtml(reminder.text)}</span></div>`).join("");
   }
 
   function renderItinerary() {
-    const days = filteredDays();
-    $("#itinerary-list").innerHTML = days.length
-      ? days.map((day) => dayCardHtml(day, TRIP.days.indexOf(day))).join("")
-      : `<div class="empty-state">No days match this filter.</div>`;
-    $$(".chip[data-filter]").forEach((button) => button.classList.toggle("active", button.dataset.filter === itineraryFilter));
+    const adventure = getAdventure();
+    const adventureState = getAdventureState();
+    let days = adventure.days;
+    if (itineraryFilter === "upcoming") days = days.filter((day) => getDayStatus(day) !== "past");
+    if (itineraryFilter === "incomplete") days = days.filter((day) => !adventureState.completedDays[day.id]);
+
+    $("#itinerary-list").innerHTML = days.map((day) => {
+      const parts = dateParts(day.date);
+      const status = getDayStatus(day);
+      const complete = Boolean(adventureState.completedDays[day.id]);
+      const expanded = expandedDays.has(day.id);
+      return `
+        <article class="day-card ${status} ${complete ? "complete" : ""} ${expanded ? "expanded" : ""}" data-day-card="${escapeHtml(day.id)}">
+          <button class="day-summary" type="button" data-action="toggle-day" data-day-id="${escapeHtml(day.id)}" aria-expanded="${expanded}">
+            <span class="day-date-tile"><span>${escapeHtml(parts.month)}</span><strong>${escapeHtml(parts.day)}</strong></span>
+            <span class="day-summary-copy"><h3>${escapeHtml(day.title)}</h3><p>${escapeHtml(day.start)} → ${escapeHtml(day.end)}</p></span>
+            <span class="day-distance">${escapeHtml(day.distanceKm)} km<small>${escapeHtml(day.driveTime)}</small></span>
+          </button>
+          <div class="day-details">
+            <div class="detail-section"><p>${escapeHtml(day.summary)}</p><div class="route-meta"><span class="meta-pill">Depart: ${escapeHtml(day.departure)}</span><span class="meta-pill">Arrive: ${escapeHtml(day.arrival)}</span><span class="meta-pill">Night: ${escapeHtml(day.overnight)}</span></div></div>
+            <div class="detail-section"><h4>Plan</h4><div class="timeline-list">${(day.timeline || []).map((item) => `<div class="timeline-row"><time>${escapeHtml(item.time)}</time><div><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.detail)}</p></div></div>`).join("")}</div></div>
+            <div class="detail-section"><h4>Do not forget</h4><ul class="check-bullets">${(day.mustDo || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>
+            ${(day.alerts || []).map((alert) => `<div class="alert-box">${escapeHtml(alert)}</div>`).join("")}
+            <div class="day-actions">
+              <a href="${escapeHtml(googleDirections(effectiveStops(day)))}" target="_blank" rel="noopener">Google Maps</a>
+              <a href="${escapeHtml(appleDirections(effectiveEndpoints(day).start, effectiveEndpoints(day).end))}" target="_blank" rel="noopener">Apple Maps</a>
+              <button type="button" data-action="open-day-adventure" data-day-id="${escapeHtml(day.id)}">Adventure page</button>
+              <label class="day-complete-label"><input type="checkbox" data-day-complete="${escapeHtml(day.id)}" ${complete ? "checked" : ""}> Day complete</label>
+            </div>
+          </div>
+        </article>`;
+    }).join("") || `<div class="section-card"><p>No days match this filter.</p></div>`;
+  }
+
+  function renderRoute() {
+    renderRouteMap();
+    const adventure = getAdventure();
+    $("#route-day-list").innerHTML = adventure.days.map((day) => {
+      const endpoints = effectiveEndpoints(day);
+      return `<article class="route-day-card"><div class="route-day-head"><div><strong>${escapeHtml(day.shortDate)} · ${escapeHtml(day.title)}</strong><span>${escapeHtml(day.distanceKm)} km · ${escapeHtml(day.driveTime)}</span></div></div><div class="route-day-links"><a href="${escapeHtml(googleDirections(effectiveStops(day)))}" target="_blank" rel="noopener">Google route</a><a href="${escapeHtml(appleDirections(endpoints.start, endpoints.end))}" target="_blank" rel="noopener">Apple route</a></div></article>`;
+    }).join("");
   }
 
   function renderRouteMap() {
-    const width = 760;
-    const height = 420;
-    const padX = 60;
-    const padY = 42;
-    const lons = TRIP.routeOverview.map((stop) => stop.lon);
-    const lats = TRIP.routeOverview.map((stop) => stop.lat);
-    const minLon = Math.min(...lons) - 0.35;
-    const maxLon = Math.max(...lons) + 0.35;
-    const minLat = Math.min(...lats) - 0.35;
-    const maxLat = Math.max(...lats) + 0.35;
-    const toPoint = (stop) => ({
-      x: padX + ((stop.lon - minLon) / (maxLon - minLon)) * (width - padX * 2),
-      y: height - padY - ((stop.lat - minLat) / (maxLat - minLat)) * (height - padY * 2)
-    });
-    const points = TRIP.routeOverview.map((stop) => ({ stop, ...toPoint(stop) }));
-    const path = points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
-    const labelOffsets = {
-      edmonton: [10, -10],
-      lethbridge: [10, -9],
-      glacier: [10, -8],
-      missoula: [10, 16],
-      silverwood: [10, 21],
-      coeurdalene: [10, 15],
-      spokanevalley: [-105, 15],
-      sandpoint: [10, -20],
-      nelson: [10, -10],
-      penticton: [-70, -10],
-      clearwater: [-82, -10],
-      hinton: [10, -10],
-      berwyn: [10, 15]
-    };
-    const labels = points
-      .map(({ stop, x, y }) => {
-        const offset = labelOffsets[stop.id] || [10, -10];
-        return `<g>
-          <circle class="map-pin-ring" cx="${x}" cy="${y}" r="8"></circle>
-          <circle class="map-pin-core ${escapeHtml(stop.type)}" cx="${x}" cy="${y}" r="4.5"></circle>
-          <text class="map-stop-label" x="${x + offset[0]}" y="${y + offset[1]}">${escapeHtml(stop.name)}</text>
-        </g>`;
-      })
-      .join("");
-
-    $("#route-map").innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      <text class="map-region-label" x="590" y="82">AB</text>
-      <text class="map-region-label" x="105" y="110">BC</text>
-      <text class="map-region-label" x="500" y="315">MT</text>
-      <text class="map-region-label" x="275" y="315">ID</text>
-      <text class="map-region-label" x="82" y="325">WA</text>
-      <polyline class="map-route-shadow" points="${path}"></polyline>
-      <polyline class="map-route-line" points="${path}"></polyline>
-      ${labels}
-    </svg>`;
-  }
-
-  function renderRouteDayList() {
-    $("#route-day-list").innerHTML = TRIP.days
-      .map(
-        (day) => `<div class="route-day-row">
-          <div class="route-day-date">${escapeHtml(day.shortDate)}</div>
-          <div class="route-day-copy"><strong>${escapeHtml(day.title)}</strong><span>${escapeHtml(day.driveTime)}</span></div>
-          <a class="small-map-button" href="${escapeHtml(googleDirections(effectiveStops(day)))}" target="_blank" rel="noopener" aria-label="Open ${escapeHtml(day.title)} in Google Maps">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path></svg>
-          </a>
-        </div>`
-      )
-      .join("");
-  }
-
-  function getListGroups(type) {
-    let groups;
-    if (type === "border") {
-      groups = [{ category: "Crossing checklist", items: TRIP.borderChecklist }];
-    } else {
-      groups = clone(TRIP[type]);
+    const points = getAdventure().routeOverview || [];
+    const container = $("#route-map");
+    if (!points.length) {
+      container.innerHTML = "<p style='padding:1rem'>No route overview is available.</p>";
+      return;
     }
-    const custom = state.customItems[type] || [];
-    if (custom.length) groups.push({ category: "Added by you", items: custom.map((item) => ({ ...item, custom: true })) });
-    return groups;
-  }
-
-  function getListItems(type) {
-    return getListGroups(type).flatMap((group) => group.items);
-  }
-
-  function renderListProgress(type) {
-    const items = getListItems(type);
-    const done = items.filter((item) => state.checks[`${type}:${item.id}`]).length;
-    const percent = items.length ? Math.round((done / items.length) * 100) : 0;
-    const title = type === "shopping" ? "Shopping list" : type === "packing" ? "Packing list" : "Border checklist";
-    $("#list-progress-wrap").innerHTML = `<div class="list-progress-card">
-      <div class="progress-ring" style="--progress:${percent * 3.6}deg" data-label="${percent}%"></div>
-      <div class="list-progress-copy"><strong>${title}</strong><span>${done} of ${items.length} complete</span></div>
-    </div>`;
-  }
-
-  function renderChecklist() {
-    const type = state.activeList;
-    $$("[data-list-tab]").forEach((button) => button.setAttribute("aria-selected", String(button.dataset.listTab === type)));
-    const groups = getListGroups(type);
-    $("#checklist-content").innerHTML = `<div class="checklist-groups">${groups
-      .map(
-        (group) => `<section class="check-group">
-          <h2>${escapeHtml(group.category)}</h2>
-          ${group.items
-            .map((item) => {
-              const key = `${type}:${item.id}`;
-              return `<div class="check-row">
-                <input id="check-${escapeHtml(key)}" type="checkbox" data-check-key="${escapeHtml(key)}" ${state.checks[key] ? "checked" : ""}>
-                <label class="check-copy" for="check-${escapeHtml(key)}">
-                  <span class="check-title">${escapeHtml(item.name)}</span>
-                  ${item.detail ? `<span class="check-detail">${escapeHtml(item.detail)}</span>` : ""}
-                </label>
-                ${item.query ? `<a class="check-map-link" href="${escapeHtml(googleSearch(item.query))}" target="_blank" rel="noopener">Map</a>` : ""}
-                ${item.custom ? `<button class="delete-item-button" type="button" data-delete-custom="${escapeHtml(type)}:${escapeHtml(item.id)}" aria-label="Delete ${escapeHtml(item.name)}">Delete</button>` : ""}
-              </div>`;
-            })
-            .join("")}
-        </section>`
-      )
-      .join("")}</div>`;
-    renderListProgress(type);
-    $("#custom-item-input").placeholder = type === "shopping" ? "Add a store or purchase" : type === "packing" ? "Add something to pack" : "Add a border reminder";
+    const width = 900;
+    const height = 430;
+    const padding = 54;
+    const lats = points.map((point) => point.lat);
+    const lons = points.map((point) => point.lon);
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    const minLon = Math.min(...lons);
+    const maxLon = Math.max(...lons);
+    const project = (point) => ({
+      x: padding + ((point.lon - minLon) / Math.max(.0001, maxLon - minLon)) * (width - padding * 2),
+      y: padding + ((maxLat - point.lat) / Math.max(.0001, maxLat - minLat)) * (height - padding * 2)
+    });
+    const plotted = points.map((point) => ({ ...point, ...project(point) }));
+    const polyline = plotted.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
+    const colours = { start: "#1f776f", overnight: "#245b78", highlight: "#d98545", home: "#2f7a4f" };
+    container.innerHTML = `
+      <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Road-trip route from Edmonton through Montana, Idaho, Washington, British Columbia, and home to Berwyn">
+        <defs><filter id="route-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-opacity=".18"/></filter></defs>
+        <path d="M0 350 C170 310 220 390 390 340 S700 270 900 310 L900 430 L0 430Z" fill="#dfecef" opacity=".8"></path>
+        <path d="M0 190 C160 145 270 240 430 180 S715 95 900 145 L900 430 L0 430Z" fill="#e8f1ee" opacity=".78"></path>
+        <polyline points="${polyline}" fill="none" stroke="#16324a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity=".17"></polyline>
+        <polyline points="${polyline}" fill="none" stroke="#d98545" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 9"></polyline>
+        ${plotted.map((point, index) => {
+          const anchor = point.x > width - 180 ? "end" : "start";
+          const dx = anchor === "end" ? -11 : 11;
+          const dy = index % 2 === 0 ? -11 : 18;
+          return `<g filter="url(#route-shadow)"><circle cx="${point.x}" cy="${point.y}" r="8" fill="${colours[point.type] || colours.overnight}" stroke="white" stroke-width="3"></circle><text x="${point.x + dx}" y="${point.y + dy}" text-anchor="${anchor}" fill="#263747" font-size="14" font-weight="750">${escapeHtml(point.name)}</text></g>`;
+        }).join("")}
+      </svg>`;
   }
 
   function renderHotels() {
-    const nights = TRIP.days.filter((day) => day.overnight !== "Home");
-    $("#hotel-list").innerHTML = nights
-      .map((day) => {
-        const hotel = state.hotels[day.id] || {};
-        const saved = Boolean(hotel.name);
-        const detail = saved
-          ? [hotel.address, hotel.confirmation ? `Confirmation ${hotel.confirmation}` : ""].filter(Boolean).join(" - ") || "Stay details saved"
-          : day.hotelHint;
-        return `<article class="hotel-card">
-          <div class="hotel-date">${escapeHtml(day.shortDate)}</div>
-          <div class="hotel-copy">
-            <strong>${escapeHtml(saved ? hotel.name : day.overnight)}</strong>
-            <span>${escapeHtml(detail)}</span>
-            <em class="hotel-status ${saved ? "saved" : ""}">${saved ? "Saved" : "Needs booking details"}</em>
-            ${saved ? `<div class="hotel-links">
-              ${hotel.address ? `<a href="${escapeHtml(googleSearch(hotel.address))}" target="_blank" rel="noopener">Map</a>` : ""}
-              ${hotel.website ? `<a href="${escapeHtml(hotel.website)}" target="_blank" rel="noopener">Website</a>` : ""}
-              ${hotel.phone ? `<a href="tel:${escapeHtml(hotel.phone.replace(/[^+\d]/g, ""))}">Call</a>` : ""}
-            </div>` : ""}
+    const adventure = getAdventure();
+    $("#hotel-list").innerHTML = adventure.days.filter((day) => day.overnight !== "Home").map((day) => {
+      const resolved = resolveHotel(day.id);
+      const hotel = resolved.hotel || {};
+      const title = hotel.name || `Stay in ${day.overnight}`;
+      const mapQuery = hotel.address || day.overnight;
+      const website = sanitizeUrl(hotel.website);
+      const phone = String(hotel.phone || "").replace(/[^+\d]/g, "");
+      return `
+        <article class="hotel-card">
+          <div class="hotel-card-head"><div><span class="hotel-date">${escapeHtml(formatDate(day.date, { weekday: "short", month: "short", day: "numeric" }))}</span><h3>${escapeHtml(title)}</h3><span class="hotel-city">${escapeHtml(day.overnight)}${resolved.inherited ? " · same stay as previous night" : ""}</span></div><button class="text-button" type="button" data-action="edit-hotel" data-day-id="${escapeHtml(day.id)}">Edit</button></div>
+          <div class="hotel-details">
+            ${hotel.address ? `<span>${escapeHtml(hotel.address)}</span>` : `<span>No street address saved yet.</span>`}
+            ${hotel.confirmation ? `<span><strong>Confirmation:</strong> ${escapeHtml(hotel.confirmation)}</span>` : ""}
+            ${hotel.notes ? `<span>${escapeHtml(hotel.notes)}</span>` : ""}
           </div>
-          <button class="edit-hotel-button" type="button" data-edit-hotel="${escapeHtml(day.id)}" aria-label="Edit stay for ${escapeHtml(day.shortDate)}">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l11-11-4-4L4 16v4zM13.5 6.5l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-          </button>
+          <div class="hotel-actions"><a href="${escapeHtml(googleSearch(mapQuery))}" target="_blank" rel="noopener">Map</a>${website ? `<a href="${escapeHtml(website)}" target="_blank" rel="noopener">Website</a>` : ""}${phone ? `<a href="tel:${escapeHtml(phone)}">Call</a>` : ""}<button type="button" data-action="edit-hotel" data-day-id="${escapeHtml(day.id)}">Details</button></div>
         </article>`;
-      })
-      .join("");
-    updateReadiness();
+    }).join("");
+  }
+
+  function renderChecklist() {
+    const adventureState = getAdventureState();
+    const listName = adventureState.activeList;
+    $$('[data-list-tab]').forEach((button) => button.setAttribute("aria-selected", String(button.dataset.listTab === listName)));
+    let groups = [];
+    const adventure = getAdventure();
+    if (listName === "border") groups = [{ category: "Border return", items: adventure.borderChecklist || [] }];
+    else groups = adventure[listName] || [];
+    const custom = adventureState.customItems[listName] || [];
+    if (custom.length) groups = [...groups, { category: "Added on this device", items: custom.map((item) => ({ ...item, custom: true })) }];
+
+    const allItems = groups.flatMap((group) => group.items);
+    const completed = allItems.filter((item) => adventureState.checks[checkKey(listName, item.id)]).length;
+    const percent = allItems.length ? Math.round((completed / allItems.length) * 100) : 0;
+    $("#list-progress-wrap").innerHTML = `<div class="section-heading"><span class="supporting-copy">${completed} of ${allItems.length} complete</span><span class="progress-label">${percent}%</span></div><div class="progress-track"><span style="width:${percent}%"></span></div>`;
+
+    $("#checklist-content").innerHTML = groups.map((group) => `<section class="checklist-group"><h3>${escapeHtml(group.category)}</h3>${group.items.map((item) => {
+      const checked = Boolean(adventureState.checks[checkKey(listName, item.id)]);
+      const detail = item.detail ? `<small>${escapeHtml(item.detail)}</small>` : "";
+      const mapLink = item.query ? `<a href="${escapeHtml(googleSearch(item.query))}" target="_blank" rel="noopener" aria-label="Map ${escapeHtml(item.name)}">↗</a>` : "";
+      return `<label class="checklist-row ${checked ? "checked" : ""}"><input type="checkbox" data-check-list="${escapeHtml(listName)}" data-check-id="${escapeHtml(item.id)}" ${checked ? "checked" : ""}><span>${escapeHtml(item.name)}${detail}</span>${item.custom ? `<button class="delete-item" type="button" data-action="delete-custom-item" data-list="${escapeHtml(listName)}" data-item-id="${escapeHtml(item.id)}" aria-label="Delete item">×</button>` : mapLink}</label>`;
+    }).join("")}</section>`).join("") || `<div class="section-card"><p>No checklist items yet.</p></div>`;
+  }
+
+  function visibleMissions(day, profile = getProfile()) {
+    return (day.adventure?.missions || []).filter((mission) => mission.audience === "all" || mission.audience === profile.experience);
+  }
+
+  function totalSightings(progress) {
+    return Object.values(progress.sightings || {}).reduce((sum, value) => sum + Math.max(0, Number(value) || 0), 0);
+  }
+
+  function journalHasContent(journal) {
+    if (!journal) return false;
+    return Number(journal.rating) > 0 || JOURNAL_FIELDS.some((field) => String(journal[field] || "").trim());
+  }
+
+  function renderAdventure() {
+    const day = getSelectedAdventureDay();
+    const profile = getProfile();
+    const progress = getDayProgress(day.id);
+    const content = day.adventure || {};
+    $("#adventure-profile-label").textContent = `${profile.name} · ${profile.experience === "navigator" ? "Navigator" : "Explorer"}`;
+    $("#adventure-title").textContent = day.title;
+    $("#adventure-date-line").textContent = `${formatDate(day.date)} · ${day.distanceKm} km · ${day.driveTime}`;
+    renderAdventureDayStrip(day.id);
+
+    const briefing = content.briefing?.[profile.experience] || content.briefing?.navigator || day.summary;
+    $("#mission-briefing").innerHTML = `<span class="brief-date">${escapeHtml(day.shortDate)} · ${escapeHtml(day.start)} to ${escapeHtml(day.end)}</span><h2>Mission briefing</h2><p>${escapeHtml(briefing)}</p><div class="mission-route"><span>${escapeHtml(day.distanceKm)} km planned</span><span>${escapeHtml(day.driveTime)}</span><span>Night: ${escapeHtml(day.overnight)}</span></div>`;
+
+    const missions = visibleMissions(day, profile);
+    const completeMissions = missions.filter((mission) => progress.missions[mission.id]).length;
+    const missionPercent = missions.length ? Math.round((completeMissions / missions.length) * 100) : 0;
+    $("#mission-progress-label").textContent = `${completeMissions}/${missions.length}`;
+    $("#mission-progress-bar").style.width = `${missionPercent}%`;
+    $("#mission-list").innerHTML = missions.map((mission) => {
+      const complete = Boolean(progress.missions[mission.id]);
+      return `<label class="mission-item ${complete ? "complete" : ""}"><input type="checkbox" data-mission-id="${escapeHtml(mission.id)}" ${complete ? "checked" : ""}><span>${escapeHtml(mission.label)}</span></label>`;
+    }).join("");
+
+    $("#fact-list").innerHTML = (content.facts || []).map((fact) => `<article class="fact-card"><h3>${escapeHtml(fact.title)}</h3><p>${escapeHtml(fact.text)}</p>${fact.prompt ? `<span class="fact-prompt">Think about it: ${escapeHtml(fact.prompt)}</span>` : ""}${fact.sourceUrl ? `<a class="fact-source" href="${escapeHtml(fact.sourceUrl)}" target="_blank" rel="noopener">Source: ${escapeHtml(fact.sourceLabel || "Official information")}</a>` : ""}</article>`).join("") || `<p class="supporting-copy">No field notes for this day yet.</p>`;
+
+    $("#photo-mission-text").textContent = content.photoMission?.[profile.experience] || content.photoMission?.navigator || "Capture one image that helps tell the story of the day.";
+    $("#photo-mission-check").checked = Boolean(progress.photoDone);
+
+    const sightings = content.spotting || [];
+    const sightTotal = totalSightings(progress);
+    $("#sighting-total").textContent = `${sightTotal} find${sightTotal === 1 ? "" : "s"}`;
+    $("#spotting-grid").innerHTML = sightings.map((spot) => {
+      const count = Math.max(0, Number(progress.sightings[spot.id]) || 0);
+      return `<article class="spot-card"><div class="spot-card-head"><span class="spot-icon">${escapeHtml(spot.icon)}</span><span class="spot-label"><strong>${escapeHtml(spot.label)}</strong><span>${spot.target ? `Quest target ${escapeHtml(spot.target)}` : "Count each real sighting"}</span></span></div><div class="counter-control"><button type="button" data-action="decrement-sighting" data-spot-id="${escapeHtml(spot.id)}" aria-label="Subtract ${escapeHtml(spot.label)}">−</button><span class="counter-value">${count}</span><button type="button" data-action="increment-sighting" data-spot-id="${escapeHtml(spot.id)}" aria-label="Add ${escapeHtml(spot.label)}">+</button></div></article>`;
+    }).join("");
+
+    renderRating(progress.journal.rating);
+    renderJournalFields(progress.journal, profile.experience);
+    renderDayBadge(day, progress, missions);
+    const teaser = content.teaser || { title: "Tomorrow", text: "Another travel day is waiting." };
+    $("#tomorrow-teaser").innerHTML = `<span class="section-kicker">Last look ahead</span><h2 id="tomorrow-teaser-title">${escapeHtml(teaser.title)}</h2><p>${escapeHtml(teaser.text)}</p>`;
+  }
+
+  function renderAdventureDayStrip(selectedId) {
+    const adventure = getAdventure();
+    $("#adventure-day-strip").innerHTML = adventure.days.map((day) => {
+      const parts = dateParts(day.date);
+      const hasMemory = dayHasMemory(getDayProgress(day.id, state.activeProfileId, false));
+      return `<button class="adventure-day-button ${day.id === selectedId ? "active" : ""} ${hasMemory ? "has-memory" : ""}" type="button" role="listitem" data-action="select-adventure-day" data-day-id="${escapeHtml(day.id)}"><span>${escapeHtml(parts.month)}</span><strong>${escapeHtml(parts.day)}</strong></button>`;
+    }).join("");
+    requestAnimationFrame(() => $("#adventure-day-strip .active")?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" }));
+  }
+
+  function renderRating(value) {
+    const rating = Math.max(0, Math.min(5, Number(value) || 0));
+    $("#rating-control").innerHTML = `<span class="sr-only">Rate the day from one to five</span>${[1,2,3,4,5].map((star) => `<button type="button" class="rating-button ${star <= rating ? "active" : ""}" data-action="set-rating" data-rating="${star}" aria-label="Rate ${star} out of 5">★</button>`).join("")}`;
+  }
+
+  function journalLabels(experience) {
+    if (experience === "explorer") {
+      return {
+        favorite: "Favourite part of the day",
+        ate: "Best thing I ate",
+        bought: "What I bought or collected",
+        surprise: "Funniest or most surprising thing",
+        note: "One more thing I want to remember"
+      };
+    }
+    return {
+      favorite: "Best moment",
+      ate: "Food stop worth remembering",
+      bought: "What I picked up",
+      surprise: "What surprised me",
+      note: "Field note for future me"
+    };
+  }
+
+  function renderJournalFields(journal, experience) {
+    const labels = journalLabels(experience);
+    $("#journal-fields").innerHTML = JOURNAL_FIELDS.map((field) => {
+      const multiline = field === "note" || field === "surprise";
+      const value = escapeHtml(journal[field] || "");
+      return `<label>${escapeHtml(labels[field])}${multiline ? `<textarea rows="${field === "note" ? 4 : 3}" maxlength="600" data-journal-field="${field}">${value}</textarea>` : `<input type="text" maxlength="180" value="${value}" data-journal-field="${field}">`}</label>`;
+    }).join("");
+  }
+
+  function badgeEligibility(day, progress, missions) {
+    const completeMissions = missions.filter((mission) => progress.missions[mission.id]).length;
+    const sightings = totalSightings(progress);
+    const rating = Number(progress.journal.rating) || 0;
+    const favorite = Boolean(String(progress.journal.favorite || "").trim());
+    return {
+      completeMissions,
+      sightings,
+      rating,
+      favorite,
+      eligible: completeMissions >= Math.min(2, missions.length) && sightings >= 3 && rating > 0 && favorite
+    };
+  }
+
+  function renderDayBadge(day, progress, missions) {
+    const badge = day.adventure?.badge;
+    if (!badge) {
+      $("#day-badge-card").innerHTML = `<p>No day badge is defined yet.</p>`;
+      return;
+    }
+    const eligibility = badgeEligibility(day, progress, missions);
+    $("#day-badge-card").innerHTML = `
+      <div class="badge-layout"><span class="badge-symbol">${escapeHtml(badge.icon)}</span><div><span class="section-kicker">Day badge</span><h2 id="day-badge-title">${escapeHtml(badge.name)}</h2><p>${escapeHtml(badge.description)}</p></div></div>
+      <div class="badge-state">${progress.badgeClaimed ? `<div class="badge-earned">✓ Badge added to Memories</div>` : `<p class="fine-print">Unlock with at least ${Math.min(2, missions.length)} missions, 3 real sightings, a day rating, and a favourite/best moment.</p><button class="primary-button" type="button" data-action="claim-day-badge" ${eligibility.eligible ? "" : "disabled"}>${eligibility.eligible ? "Claim badge" : "Badge not ready"}</button>`}</div>`;
+  }
+
+  function dayHasMemory(progress) {
+    return Boolean(progress.badgeClaimed || progress.photoDone || journalHasContent(progress.journal) || totalSightings(progress) || Object.values(progress.missions || {}).some(Boolean));
+  }
+
+  function renderMemories() {
+    const adventure = getAdventure();
+    const profile = getProfile();
+    const metrics = profileMetrics();
+    const global = earnedGlobalBadges();
+    const average = metrics.ratings ? (adventure.days.reduce((sum, day) => sum + (Number(getDayProgress(day.id, state.activeProfileId, false).journal.rating) || 0), 0) / metrics.ratings).toFixed(1) : "—";
+    $("#memory-stats").innerHTML = [
+      { value: metrics.sightings, label: "sightings" },
+      { value: metrics.journals, label: "journal days" },
+      { value: metrics.dayBadges + global.length, label: "badges" },
+      { value: average, label: "average rating" }
+    ].map((stat) => `<div class="memory-stat"><strong>${escapeHtml(stat.value)}</strong><span>${escapeHtml(stat.label)}</span></div>`).join("");
+
+    const dayBadges = adventure.days.map((day) => ({ ...day.adventure.badge, earned: getDayProgress(day.id, state.activeProfileId, false).badgeClaimed, source: day.shortDate }));
+    const globalBadges = DATA.globalBadges.map((badge) => ({ ...badge, earned: global.some((item) => item.id === badge.id), source: "Adventure" }));
+    $("#badge-gallery").innerHTML = [...dayBadges, ...globalBadges].map((badge) => `<article class="badge-card ${badge.earned ? "" : "locked"}"><span class="badge-symbol">${escapeHtml(badge.icon)}</span><strong>${escapeHtml(badge.name)}</strong><p>${escapeHtml(badge.description)}</p><small>${badge.earned ? `Earned · ${escapeHtml(badge.source)}` : "Locked"}</small></article>`).join("");
+
+    $("#scrapbook-list").innerHTML = adventure.days.map((day) => renderScrapbookCard(day, getDayProgress(day.id, state.activeProfileId, false), profile)).join("");
+  }
+
+  function renderScrapbookCard(day, progress, profile) {
+    const parts = dateParts(day.date);
+    const journal = progress.journal || emptyDayProgress().journal;
+    const labels = journalLabels(profile.experience);
+    const hasMemory = dayHasMemory(progress);
+    const spots = (day.adventure?.spotting || []).map((spot) => ({ label: spot.label, count: Number(progress.sightings[spot.id]) || 0 })).filter((spot) => spot.count > 0);
+    const rating = Math.max(0, Math.min(5, Number(journal.rating) || 0));
+    return `<article class="scrapbook-card"><div class="scrapbook-head"><span class="day-date-tile"><span>${escapeHtml(parts.month)}</span><strong>${escapeHtml(parts.day)}</strong></span><div><h3>${escapeHtml(day.title)}</h3><p>${escapeHtml(day.start)} → ${escapeHtml(day.end)}</p></div><span class="scrapbook-rating">${rating ? "★".repeat(rating) : ""}</span></div><div class="scrapbook-body">${hasMemory ? `${journal.favorite ? `<div class="memory-line"><strong>${escapeHtml(labels.favorite)}</strong><span>${escapeHtml(journal.favorite)}</span></div>` : ""}${journal.ate ? `<div class="memory-line"><strong>${escapeHtml(labels.ate)}</strong><span>${escapeHtml(journal.ate)}</span></div>` : ""}${journal.bought ? `<div class="memory-line"><strong>${escapeHtml(labels.bought)}</strong><span>${escapeHtml(journal.bought)}</span></div>` : ""}${journal.surprise ? `<div class="memory-line"><strong>${escapeHtml(labels.surprise)}</strong><span>${escapeHtml(journal.surprise)}</span></div>` : ""}${journal.note ? `<div class="memory-line"><strong>${escapeHtml(labels.note)}</strong><span>${escapeHtml(journal.note)}</span></div>` : ""}${spots.length ? `<div class="sighting-summary">${spots.map((spot) => `<span class="sighting-chip">${escapeHtml(spot.label)} × ${spot.count}</span>`).join("")}</div>` : ""}${progress.photoDone ? `<span class="sighting-chip">Photo mission complete</span>` : ""}${progress.badgeClaimed ? `<span class="sighting-chip">Badge: ${escapeHtml(day.adventure.badge.name)}</span>` : ""}` : `<p class="empty-memory">No entry yet. Open this day in Adventure Mode to add field notes.</p>`}</div></article>`;
+  }
+
+  function renderSettings() {
+    renderProfiles();
+    renderInstallHelp();
+    renderLiveChecks();
+    $("#general-notes").value = getAdventureState().notes.general || "";
+  }
+
+  function renderProfiles() {
+    const profiles = Object.values(state.profiles);
+    const card = (profile, picker = false) => picker
+      ? `<button class="profile-pick-button" type="button" data-action="select-profile" data-profile-id="${escapeHtml(profile.id)}"><span class="profile-avatar">${escapeHtml((profile.name || "?").slice(0,1).toUpperCase())}</span><span><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(profile.experience === "navigator" ? "Independent prompts, route tasks, and photography" : "Visual prompts, spotting, and direct missions")}</span></span></button>`
+      : `<article class="profile-card ${profile.id === state.activeProfileId ? "active" : ""}" data-experience="${escapeHtml(profile.experience)}"><span class="profile-avatar">${escapeHtml((profile.name || "?").slice(0,1).toUpperCase())}</span><div><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(profile.experience === "navigator" ? "Navigator experience" : "Explorer experience")}</span></div><div class="profile-card-actions"><button type="button" data-action="select-profile" data-profile-id="${escapeHtml(profile.id)}">Use</button><button type="button" data-action="edit-profile" data-profile-id="${escapeHtml(profile.id)}">Edit</button></div></article>`;
+    $("#profile-list").innerHTML = profiles.map((profile) => card(profile)).join("");
+    $("#profile-picker-list").innerHTML = profiles.map((profile) => card(profile, true)).join("");
+  }
+
+  function renderInstallHelp() {
+    const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    const help = $("#install-help");
+    if (standalone) {
+      help.innerHTML = `<p class="supporting-copy">Installed as a Home Screen app. Use <strong>Refresh app now</strong> after a GitHub Pages update if an old build remains cached.</p>`;
+    } else if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
+      help.innerHTML = `<p class="supporting-copy">In Safari, tap Share, choose <strong>Add to Home Screen</strong>, enable <strong>Open as Web App</strong>, and add it.</p>`;
+    } else {
+      help.innerHTML = `<p class="supporting-copy">Use the browser install control when available, or keep using the site directly.</p>`;
+    }
+  }
+
+  function renderLiveChecks() {
+    const checks = (getAdventure().liveChecks || []).filter((item) => item.id !== "concert");
+    $("#live-checks-list").innerHTML = checks.map((item) => `<article class="live-check"><div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.note)}${item.verified ? ` · ${escapeHtml(item.verified)}` : ""}</span></div><a href="${escapeHtml(item.url)}" target="_blank" rel="noopener">Open</a></article>`).join("");
+  }
+
+  function renderAll() {
+    renderHeader();
+    renderHome();
+    renderItinerary();
+    renderRoute();
+    renderHotels();
+    renderChecklist();
+    renderAdventure();
+    renderMemories();
+    renderSettings();
+    updateNetworkStatus();
   }
 
   function openHotelDialog(dayId) {
-    const day = TRIP.days.find((item) => item.id === dayId);
-    if (!day || day.overnight === "Home") return;
-    const hotel = state.hotels[dayId] || {};
-    $("#hotel-dialog-title").textContent = `${day.shortDate} - ${day.overnight}`;
+    const day = getAdventure().days.find((item) => item.id === dayId);
+    if (!day) return;
+    const resolved = resolveHotel(dayId);
+    const hotel = resolved.hotel || {};
+    $("#hotel-dialog-title").textContent = `${day.shortDate} · ${day.overnight}`;
     $("#hotel-day-id").value = dayId;
     $("#hotel-name").value = hotel.name || "";
     $("#hotel-address").value = hotel.address || "";
@@ -584,23 +946,14 @@
     $("#hotel-checkin").value = hotel.checkin || "";
     $("#hotel-checkout").value = hotel.checkout || "";
     $("#hotel-notes").value = hotel.notes || "";
-    const dialog = $("#hotel-dialog");
-    if (typeof dialog.showModal === "function") dialog.showModal();
-    else dialog.setAttribute("open", "");
-    setTimeout(() => $("#hotel-name").focus(), 80);
-  }
-
-  function closeHotelDialog() {
-    const dialog = $("#hotel-dialog");
-    if (typeof dialog.close === "function") dialog.close();
-    else dialog.removeAttribute("open");
+    $("#hotel-dialog").showModal();
   }
 
   function saveHotel(event) {
     event.preventDefault();
     const dayId = $("#hotel-day-id").value;
     if (!dayId) return;
-    state.hotels[dayId] = {
+    getAdventureState().hotels[dayId] = {
       name: $("#hotel-name").value.trim(),
       address: $("#hotel-address").value.trim(),
       confirmation: $("#hotel-confirmation").value.trim(),
@@ -611,295 +964,188 @@
       notes: $("#hotel-notes").value.trim()
     };
     saveState();
-    closeHotelDialog();
+    $("#hotel-dialog").close();
     renderHotels();
     renderItinerary();
-    renderRouteDays();
-    renderNextDay();
-    renderItinerary();
-    showToast("Stay details saved on this device.");
+    renderRoute();
+    showToast("Stay saved locally. Route links refreshed.");
   }
 
-  function renderLiveChecks() {
-    $("#live-checks-list").innerHTML = TRIP.liveChecks
-      .map(
-        (item) => `<a class="live-check-card" href="${escapeHtml(item.url)}" target="_blank" rel="noopener">
-          <span class="live-check-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14L21 3m0 0h-7m7 0v7M19 13v7H4V5h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
-          <span class="live-check-copy"><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.note)}</span><small>${escapeHtml(item.verified)}</small></span>
-        </a>`
-      )
-      .join("");
+  function openProfileDialog(profileId) {
+    const profile = state.profiles[profileId];
+    if (!profile) return;
+    $("#profile-dialog-title").textContent = `Edit ${profile.name}`;
+    $("#profile-id").value = profileId;
+    $("#profile-display-name").value = profile.name;
+    $$('input[name="experience"]', $("#profile-form")).forEach((input) => { input.checked = input.value === profile.experience; });
+    $("#profile-dialog").showModal();
   }
 
-  function renderNotes() {
-    $("#general-notes").value = state.notes.general || "";
-  }
-
-  function saveGeneralNotes() {
-    state.notes.general = $("#general-notes").value;
+  function saveProfile(event) {
+    event.preventDefault();
+    const profileId = $("#profile-id").value;
+    const profile = state.profiles[profileId];
+    if (!profile) return;
+    const name = $("#profile-display-name").value.trim();
+    const experience = $('input[name="experience"]:checked', $("#profile-form"))?.value || profile.experience;
+    profile.name = name || profile.name;
+    profile.experience = ["navigator", "explorer"].includes(experience) ? experience : profile.experience;
+    profile.roleLabel = profile.experience === "navigator" ? "Independent traveller" : "Visual explorer";
     saveState();
-    const status = $("#notes-save-status");
-    status.textContent = "Saved locally";
-    clearTimeout(noteSaveTimer);
-    noteSaveTimer = setTimeout(() => {
-      status.textContent = "";
-    }, 1500);
+    $("#profile-dialog").close();
+    renderAll();
+    showToast("Adventure profile updated.");
   }
 
-  function saveDailyNote(dayId, value) {
-    state.notes.daily[dayId] = value;
+  function selectProfile(profileId) {
+    if (!state.profiles[profileId]) return;
+    state.activeProfileId = profileId;
     saveState();
+    [$("#profile-picker"), $("#profile-dialog")].forEach((dialog) => { if (dialog?.open) dialog.close(); });
+    renderAll();
+    showToast(`${state.profiles[profileId].name} is now active.`);
   }
 
-  function renderInstallHelp() {
-    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-    const help = $("#install-help");
-    if (isStandalone) {
-      help.innerHTML = `<strong>Installed.</strong><p>This app is running from the Home Screen. Open it online once after each published update so the new files can cache.</p>`;
-    } else if (isIos) {
-      help.innerHTML = `<strong>Install on iPhone</strong><ol><li>Open the published site in Safari.</li><li>Tap the Share button.</li><li>Choose Add to Home Screen, then Add.</li><li>Open the new icon once while online to finish caching.</li></ol>`;
-    } else {
-      help.innerHTML = `<strong>Install this PWA</strong><p>Use the browser install button when available. After the first online load, the itinerary and saved data remain available offline.</p>`;
-    }
+  function updateAdventureProgress(action, value) {
+    const day = getSelectedAdventureDay();
+    const progress = getDayProgress(day.id);
+    action(progress, value);
+    saveState();
+    renderAdventure();
+    renderHomeProfileProgress();
+    renderMemories();
   }
 
-  function renderAll() {
-    renderStats();
-    renderCountdown();
-    renderNextDay();
-    renderReminders();
-    renderItinerary();
-    renderRouteMap();
-    renderRouteDayList();
-    renderChecklist();
-    renderHotels();
-    renderNotes();
-    renderLiveChecks();
-    renderInstallHelp();
+  function setJournalField(field, value) {
+    if (!JOURNAL_FIELDS.includes(field)) return;
+    const day = getSelectedAdventureDay();
+    const progress = getDayProgress(day.id);
+    progress.journal[field] = value;
+    saveState();
+    const status = $("#journal-save-status");
+    status.textContent = "Saving…";
+    clearTimeout(journalSaveTimer);
+    journalSaveTimer = setTimeout(() => {
+      status.textContent = "Saved";
+      renderDayBadge(day, progress, visibleMissions(day));
+      renderHomeProfileProgress();
+      renderMemories();
+    }, 450);
   }
 
-  function openDay(dayId) {
-    itineraryFilter = "all";
-    renderItinerary();
-    setView("itinerary");
-    requestAnimationFrame(() => {
-      const card = $(`[data-day-id="${CSS.escape(dayId)}"]`);
-      if (!card) return;
-      card.open = true;
-      card.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  }
-
-  function updateNetworkStatus() {
-    const online = navigator.onLine;
-    const element = $("#network-status");
-    element.textContent = online ? "Online" : "Offline";
-    element.classList.toggle("online", online);
-    element.classList.toggle("offline", !online);
-  }
-
-  function buildBackup() {
-    return {
-      app: TRIP.appId,
-      appVersion: TRIP.version,
-      exportedAt: new Date().toISOString(),
-      state
-    };
+  function claimDayBadge() {
+    const day = getSelectedAdventureDay();
+    const progress = getDayProgress(day.id);
+    const missions = visibleMissions(day);
+    if (!badgeEligibility(day, progress, missions).eligible) return;
+    progress.badgeClaimed = true;
+    saveState();
+    renderAdventure();
+    renderHomeProfileProgress();
+    renderMemories();
+    showToast(`${day.adventure.badge.name} added to Memories.`);
   }
 
   function exportBackup() {
-    const backup = JSON.stringify(buildBackup(), null, 2);
-    const blob = new Blob([backup], { type: "application/json" });
+    const adventure = getAdventure();
+    const payload = {
+      appId: APP.id,
+      appVersion: APP.version,
+      exportedAt: new Date().toISOString(),
+      adventureId: adventure.id,
+      state
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    const date = new Date().toISOString().slice(0, 10);
     link.href = url;
-    link.download = `northwest-road-trip-backup-${date}.json`;
+    link.download = `Bobsx4-Road-Companion-backup-${new Date().toISOString().slice(0,10)}.json`;
     document.body.appendChild(link);
     link.click();
     link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showToast("Trip backup created.");
+    URL.revokeObjectURL(url);
+    showToast("Backup file created.");
   }
 
   async function importBackup(file) {
-    if (!file) return;
     try {
       const text = await file.text();
-      const backup = JSON.parse(text);
-      if (backup.app !== TRIP.appId || !backup.state) throw new Error("This is not a Northwest Road Trip backup.");
-      state = mergeState(backup.state);
+      const payload = JSON.parse(text);
+      const incoming = payload.state || payload;
+      if (!incoming || typeof incoming !== "object") throw new Error("No state object");
+      state = mergeState(incoming);
       saveState();
       renderAll();
-      showToast("Trip backup restored.");
+      showToast("Backup restored.");
     } catch (error) {
       console.error(error);
-      showToast(error.message || "The backup file could not be imported.", 4200);
-    } finally {
-      $("#import-file").value = "";
-    }
-  }
-
-  function resetData() {
-    const confirmed = window.confirm("Reset every checkmark, note, hotel, and custom item stored in this app?");
-    if (!confirmed) return;
-    state = clone(defaultState);
-    saveState();
-    renderAll();
-    showToast("Local trip data reset.");
-  }
-
-  function addCustomItem(event) {
-    event.preventDefault();
-    const input = $("#custom-item-input");
-    const name = input.value.trim();
-    if (!name) return;
-    const type = state.activeList;
-    state.customItems[type].push({ id: `custom-${Date.now()}`, name });
-    input.value = "";
-    saveState();
-    renderChecklist();
-    showToast("Checklist item added.");
-  }
-
-  function deleteCustomItem(type, id) {
-    state.customItems[type] = state.customItems[type].filter((item) => item.id !== id);
-    delete state.checks[`${type}:${id}`];
-    saveState();
-    renderChecklist();
-  }
-
-  function handleCheckChange(input) {
-    const key = input.dataset.checkKey;
-    state.checks[key] = input.checked;
-    saveState();
-    if (key.startsWith("reminder:")) updateReadiness();
-    if (["shopping", "packing", "border"].some((prefix) => key.startsWith(`${prefix}:`))) renderListProgress(state.activeList);
-  }
-
-  function handleCompletedDay(input) {
-    const dayId = input.dataset.completeDay;
-    state.completedDays[dayId] = input.checked;
-    saveState();
-    const card = input.closest(".day-card");
-    if (card) card.classList.toggle("completed", input.checked);
-    showToast(input.checked ? "Day marked complete." : "Day reopened.");
-  }
-
-  function openOverview(part) {
-    const outbound = [
-      "Edmonton, AB",
-      "Lethbridge, AB",
-      "Carway Border Crossing, AB",
-      "St. Mary Visitor Center, Glacier National Park",
-      "Logan Pass Visitor Center, Glacier National Park",
-      "Lake McDonald Lodge, Glacier National Park",
-      "Kalispell, MT",
-      "Coeur d'Alene, ID",
-      "Silverwood Theme Park, Athol, ID",
-      "Coeur d'Alene, ID",
-      "Spokane Valley Mall, Spokane Valley, WA",
-      "Sandpoint, ID"
-    ];
-    const returnRoute = [
-      "Sandpoint, ID",
-      "Creston, BC",
-      "Kootenay Bay Ferry Terminal, BC",
-      "Balfour Ferry Terminal, BC",
-      "Nelson, BC",
-      "Penticton, BC",
-      "Clearwater, BC",
-      "Helmcken Falls, Wells Gray Provincial Park",
-      "Hinton, AB",
-      "Berwyn, AB"
-    ];
-    window.open(googleDirections(part === 1 ? outbound : returnRoute), "_blank", "noopener");
-  }
-
-  function handleAction(action) {
-    switch (action) {
-      case "open-current-day":
-        openDay(getCurrentOrNextDay().id);
-        break;
-      case "open-route":
-        setView("route");
-        break;
-      case "open-itinerary":
-        setView("itinerary");
-        break;
-      case "open-hotels":
-        setView("more");
-        setTimeout(() => $("#stays-section").scrollIntoView({ behavior: "smooth", block: "start" }), 120);
-        break;
-      case "open-lists":
-        setView("lists");
-        break;
-      case "open-live-checks":
-        setView("more");
-        setTimeout(() => $("#live-checks-section").scrollIntoView({ behavior: "smooth", block: "start" }), 120);
-        break;
-      case "export-backup":
-        exportBackup();
-        break;
-      case "open-google-overview-1":
-        openOverview(1);
-        break;
-      case "open-google-overview-2":
-        openOverview(2);
-        break;
-      case "print-trip":
-        window.print();
-        break;
-      case "close-hotel-dialog":
-        closeHotelDialog();
-        break;
-      case "reset-data":
-        resetData();
-        break;
-      case "check-update":
-        checkForUpdate();
-        break;
-      default:
-        break;
+      showToast("That file is not a valid Road Companion backup.", 4200);
     }
   }
 
   async function checkForUpdate() {
-    if (!("serviceWorker" in navigator)) {
-      showToast("Service workers are not available in this browser.");
-      return;
-    }
+    showToast("Checking the published build…");
     try {
-      const registration = await navigator.serviceWorker.getRegistration();
-      if (!registration) {
-        showToast("Publish the app over HTTPS before checking for updates.");
-        return;
+      const response = await fetch(`release-manifest.json?check=${Date.now()}`, { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const manifest = await response.json();
+      if (manifest.versionCode && manifest.versionCode !== APP.versionCode) {
+        showToast(`Version ${manifest.version} is published. Tap Refresh app now.`, 5200);
+      } else {
+        const registration = await navigator.serviceWorker?.getRegistration();
+        await registration?.update();
+        showToast(`You are on ${APP.version}.`);
       }
-      await registration.update();
-      showToast("Update check complete. Reload if a new version was published.");
     } catch (error) {
-      console.error(error);
-      showToast("The update check could not be completed.");
+      console.warn("Update check failed", error);
+      showToast(navigator.onLine ? "Could not verify the published version." : "Offline: update check needs a connection.");
     }
   }
 
-  function refreshTimeSensitiveUi() {
-    renderCountdown();
-    renderNextDay();
+  async function refreshApp() {
+    const button = $("#refresh-button");
+    button?.classList.add("loading");
+    showToast(navigator.onLine ? "Refreshing app files…" : "Reloading saved offline app…");
+    try {
+      if (navigator.onLine) {
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.filter((key) => key.startsWith("bobsx4-road-companion")).map((key) => caches.delete(key)));
+        }
+        if ("serviceWorker" in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const registration of registrations) {
+            await registration.update();
+            if (registration.waiting) registration.waiting.postMessage({ type: "SKIP_WAITING" });
+          }
+        }
+      }
+    } catch (error) {
+      console.warn("Refresh preparation failed", error);
+    }
+    setTimeout(() => window.location.reload(), 450);
+  }
+
+  function updateNetworkStatus() {
+    const status = $("#network-status");
+    if (!status) return;
+    const online = navigator.onLine;
+    status.textContent = online ? "Online" : "Offline";
+    status.classList.toggle("online", online);
+    status.classList.toggle("offline", !online);
   }
 
   function registerServiceWorker() {
-    if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
+    if (!("serviceWorker" in navigator)) return;
     window.addEventListener("load", async () => {
       try {
-        const registration = await navigator.serviceWorker.register("./service-worker.js", { scope: "./" });
+        const registration = await navigator.serviceWorker.register("service-worker.js", { scope: "./" });
         registration.addEventListener("updatefound", () => {
           const worker = registration.installing;
           if (!worker) return;
           worker.addEventListener("statechange", () => {
             if (worker.state === "installed" && navigator.serviceWorker.controller) {
-              showToast("A new app version is ready. Reload to use it.", 5000);
+              showToast("A newer Road Companion build is ready. Tap Refresh.", 5200);
             }
           });
         });
@@ -907,31 +1153,110 @@
         console.warn("Service worker registration failed", error);
       }
     });
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (sessionStorage.getItem("bobsx4-controller-reloaded")) return;
+      sessionStorage.setItem("bobsx4-controller-reloaded", "1");
+      window.location.reload();
+    });
   }
 
-  function setupInstallPrompt() {
+  function initInstallPrompt() {
     window.addEventListener("beforeinstallprompt", (event) => {
       event.preventDefault();
       deferredInstallPrompt = event;
       $("#install-button").classList.remove("hidden");
     });
     $("#install-button").addEventListener("click", async () => {
-      if (!deferredInstallPrompt) {
-        setView("more");
-        setTimeout(() => $("#install-title").scrollIntoView({ behavior: "smooth", block: "start" }), 120);
-        return;
-      }
+      if (!deferredInstallPrompt) return;
       deferredInstallPrompt.prompt();
       await deferredInstallPrompt.userChoice;
       deferredInstallPrompt = null;
       $("#install-button").classList.add("hidden");
     });
-    window.addEventListener("appinstalled", () => {
-      deferredInstallPrompt = null;
-      $("#install-button").classList.add("hidden");
-      renderInstallHelp();
-      showToast("Road Trip 2026 installed.");
-    });
+  }
+
+  function handleAction(button) {
+    const action = button.dataset.action;
+    if (!action) return;
+    switch (action) {
+      case "go-home": setView("home"); break;
+      case "open-current-adventure":
+      case "open-adventure": setView("adventure"); break;
+      case "open-trip-days": setView("trip"); setTripTab("days"); break;
+      case "open-stays": setView("trip"); setTripTab("stays"); break;
+      case "open-lists": setView("trip"); setTripTab("lists"); break;
+      case "open-memories": setView("memories"); break;
+      case "refresh-app": refreshApp(); break;
+      case "check-update": checkForUpdate(); break;
+      case "print-trip": window.print(); break;
+      case "toggle-day": {
+        const dayId = button.dataset.dayId;
+        if (expandedDays.has(dayId)) expandedDays.delete(dayId); else expandedDays.add(dayId);
+        renderItinerary();
+        break;
+      }
+      case "open-day-adventure": selectAdventureDay(button.dataset.dayId, { scroll: false }); setView("adventure"); break;
+      case "edit-hotel": openHotelDialog(button.dataset.dayId); break;
+      case "close-hotel-dialog": $("#hotel-dialog").close(); break;
+      case "open-profile-menu": renderProfiles(); $("#profile-picker").showModal(); break;
+      case "close-profile-picker": $("#profile-picker").close(); break;
+      case "select-profile": selectProfile(button.dataset.profileId); break;
+      case "edit-profile": openProfileDialog(button.dataset.profileId); break;
+      case "close-profile-dialog": $("#profile-dialog").close(); break;
+      case "previous-adventure-day": {
+        const index = dayIndex(getSelectedAdventureDay());
+        const days = getAdventure().days;
+        selectAdventureDay(days[Math.max(0, index - 1)].id, { scroll: false });
+        break;
+      }
+      case "next-adventure-day": {
+        const index = dayIndex(getSelectedAdventureDay());
+        const days = getAdventure().days;
+        selectAdventureDay(days[Math.min(days.length - 1, index + 1)].id, { scroll: false });
+        break;
+      }
+      case "current-adventure-day": selectAdventureDay(getCurrentOrNextDay().id, { scroll: false }); break;
+      case "select-adventure-day": selectAdventureDay(button.dataset.dayId, { scroll: false }); break;
+      case "increment-sighting": updateAdventureProgress((progress) => { progress.sightings[button.dataset.spotId] = (Number(progress.sightings[button.dataset.spotId]) || 0) + 1; }); break;
+      case "decrement-sighting": updateAdventureProgress((progress) => { progress.sightings[button.dataset.spotId] = Math.max(0, (Number(progress.sightings[button.dataset.spotId]) || 0) - 1); }); break;
+      case "set-rating": updateAdventureProgress((progress) => { progress.journal.rating = Number(button.dataset.rating) || 0; }); break;
+      case "claim-day-badge": claimDayBadge(); break;
+      case "delete-custom-item": {
+        const listName = button.dataset.list;
+        const itemId = button.dataset.itemId;
+        const adventureState = getAdventureState();
+        adventureState.customItems[listName] = adventureState.customItems[listName].filter((item) => item.id !== itemId);
+        delete adventureState.checks[checkKey(listName, itemId)];
+        saveState();
+        renderChecklist();
+        renderReadiness();
+        break;
+      }
+      case "open-google-overview-1": {
+        const days = getAdventure().days.slice(0, 5);
+        const stops = [days[0].start, days[0].end, "St. Mary Visitor Center, Glacier National Park", days[1].end, days[2].end, "Spokane Valley Mall, WA", days[4].end];
+        window.open(googleDirections(stops), "_blank", "noopener");
+        break;
+      }
+      case "open-google-overview-2": {
+        const days = getAdventure().days;
+        const stops = [days[5].start, "Kootenay Bay Ferry Terminal, BC", days[5].end, days[6].end, "Kangaroo Creek Farm, Kelowna, BC", days[7].end, days[8].end, days[9].end];
+        window.open(googleDirections(stops), "_blank", "noopener");
+        break;
+      }
+      case "export-backup": exportBackup(); break;
+      case "reset-data": {
+        if (window.confirm("Reset all local Road Companion data on this device? This removes hotel details, journals, tallies, badges, and checklists.")) {
+          localStorage.removeItem(STORAGE_KEY);
+          state = buildDefaultState();
+          saveState();
+          renderAll();
+          showToast("Local data reset.");
+        }
+        break;
+      }
+      default: break;
+    }
   }
 
   function bindEvents() {
@@ -941,91 +1266,102 @@
         setView(nav.dataset.nav);
         return;
       }
-
-      const action = event.target.closest("[data-action]");
-      if (action) {
-        handleAction(action.dataset.action);
+      const tripTab = event.target.closest("[data-trip-tab]");
+      if (tripTab) {
+        setTripTab(tripTab.dataset.tripTab);
         return;
       }
-
-      const day = event.target.closest("[data-open-day]");
-      if (day) {
-        openDay(day.dataset.openDay);
-        return;
-      }
-
-      const editHotel = event.target.closest("[data-edit-hotel]");
-      if (editHotel) {
-        openHotelDialog(editHotel.dataset.editHotel);
-        return;
-      }
-
       const filter = event.target.closest("[data-filter]");
       if (filter) {
         itineraryFilter = filter.dataset.filter;
+        $$('[data-filter]').forEach((button) => button.classList.toggle("active", button.dataset.filter === itineraryFilter));
         renderItinerary();
         return;
       }
-
-      const listTab = event.target.closest("[data-list-tab]");
-      if (listTab) {
-        state.activeList = listTab.dataset.listTab;
-        saveState();
-        renderChecklist();
-        return;
-      }
-
-      const deleteButton = event.target.closest("[data-delete-custom]");
-      if (deleteButton) {
-        const [type, id] = deleteButton.dataset.deleteCustom.split(":");
-        deleteCustomItem(type, id);
-      }
+      const action = event.target.closest("[data-action]");
+      if (action) handleAction(action);
     });
 
     document.addEventListener("change", (event) => {
-      const input = event.target;
-      if (input.matches("[data-check-key]")) handleCheckChange(input);
-      if (input.matches("[data-complete-day]")) handleCompletedDay(input);
-      if (input.id === "import-file") importBackup(input.files[0]);
+      const target = event.target;
+      if (target.matches("[data-day-complete]")) {
+        getAdventureState().completedDays[target.dataset.dayComplete] = target.checked;
+        saveState();
+        renderItinerary();
+        return;
+      }
+      if (target.matches("[data-check-list]")) {
+        getAdventureState().checks[checkKey(target.dataset.checkList, target.dataset.checkId)] = target.checked;
+        saveState();
+        renderChecklist();
+        renderReadiness();
+        return;
+      }
+      if (target.matches("[data-mission-id]")) {
+        updateAdventureProgress((progress) => { progress.missions[target.dataset.missionId] = target.checked; });
+        return;
+      }
+      if (target.id === "photo-mission-check") {
+        updateAdventureProgress((progress) => { progress.photoDone = target.checked; });
+      }
     });
 
     document.addEventListener("input", (event) => {
-      const input = event.target;
-      if (input.id === "general-notes") saveGeneralNotes();
-      if (input.matches("[data-daily-note]")) saveDailyNote(input.dataset.dailyNote, input.value);
+      const target = event.target;
+      if (target.matches("[data-journal-field]")) {
+        setJournalField(target.dataset.journalField, target.value);
+        return;
+      }
+      if (target.id === "general-notes") {
+        getAdventureState().notes.general = target.value;
+        saveState();
+        $("#notes-save-status").textContent = "Saving…";
+        clearTimeout(notesSaveTimer);
+        notesSaveTimer = setTimeout(() => { $("#notes-save-status").textContent = "Saved"; }, 450);
+      }
     });
 
-    $("#custom-item-form").addEventListener("submit", addCustomItem);
     $("#hotel-form").addEventListener("submit", saveHotel);
-    $("#hotel-dialog").addEventListener("click", (event) => {
-      if (event.target === $("#hotel-dialog")) closeHotelDialog();
+    $("#profile-form").addEventListener("submit", saveProfile);
+    $("#custom-item-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const input = $("#custom-item-input");
+      const name = input.value.trim();
+      if (!name) return;
+      const listName = getAdventureState().activeList;
+      getAdventureState().customItems[listName].push({ id: `custom-${Date.now()}`, name });
+      input.value = "";
+      saveState();
+      renderChecklist();
     });
+    $("#import-file").addEventListener("change", (event) => {
+      const file = event.target.files?.[0];
+      if (file) importBackup(file);
+      event.target.value = "";
+    });
+
+    $$('[data-list-tab]').forEach((button) => button.addEventListener("click", () => {
+      getAdventureState().activeList = button.dataset.listTab;
+      saveState();
+      renderChecklist();
+    }));
 
     window.addEventListener("online", updateNetworkStatus);
     window.addEventListener("offline", updateNetworkStatus);
-    window.addEventListener("hashchange", () => {
-      const view = location.hash.replace("#", "");
-      if (VALID_VIEWS.includes(view)) setView(view, { keepScroll: true });
+    window.addEventListener("focus", () => { renderCountdown(); renderNextDay(); });
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) { renderCountdown(); renderNextDay(); }
     });
   }
 
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) refreshTimeSensitiveUi();
-  });
-  window.addEventListener("focus", refreshTimeSensitiveUi);
-
   function init() {
-    if (!TRIP) {
-      document.body.innerHTML = "<p>Trip data could not be loaded.</p>";
-      return;
-    }
-    renderAll();
     bindEvents();
-    updateNetworkStatus();
-    setupInstallPrompt();
+    initInstallPrompt();
     registerServiceWorker();
-    const initialView = location.hash.replace("#", "");
-    setView(VALID_VIEWS.includes(initialView) ? initialView : "home", { keepScroll: true });
+    renderAll();
+    const requested = location.hash.replace("#", "");
+    setView(VALID_VIEWS.includes(requested) ? requested : "home", { keepScroll: true });
+    setTripTab(activeTripTab);
   }
 
   init();
