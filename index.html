@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-  <link rel="stylesheet" href="styles.css?v=0.3.0-rc1">
+  <link rel="stylesheet" href="styles.css?v=0.3.0-rc2">
   <title>Bobsx4 Road Companion</title>
 </head>
 <body>
@@ -38,7 +38,7 @@
           <span id="profile-initials" class="profile-initials">N</span>
           <span id="profile-name" class="profile-name">Navigator</span>
         </button>
-        <span class="version-badge" aria-label="App version">v<span id="header-version">0.3.0 RC1</span></span>
+        <span class="version-badge" aria-label="App version">v<span id="header-version">0.3.0 RC2</span></span>
         <span id="network-status" class="status-pill" aria-live="polite">Checking</span>
         <button id="refresh-button" class="icon-button refresh-button" type="button" data-action="refresh-app" aria-label="Refresh app" title="Refresh app">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6.1 8.4A7 7 0 0 1 18.5 7M17.9 15.6A7 7 0 0 1 5.5 17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
@@ -191,50 +191,50 @@
 
         <section id="mission-briefing" class="mission-briefing" aria-labelledby="mission-briefing-title"></section>
 
-        <div class="adventure-grid">
-          <div class="adventure-column">
-            <section class="section-card" aria-labelledby="missions-title">
+        <div id="adventure-grid" class="adventure-grid">
+          <div id="adventure-left-column" class="adventure-column">
+            <section id="missions-card" class="section-card mode-card missions-card" aria-labelledby="missions-title">
               <div class="section-heading">
-                <div><span class="section-kicker">Do</span><h2 id="missions-title">Today’s mission</h2></div>
+                <div><span id="missions-kicker" class="section-kicker">Do</span><h2 id="missions-title">Today’s mission</h2><p id="missions-intro" class="section-intro"></p></div>
                 <span id="mission-progress-label" class="progress-label">0%</span>
               </div>
               <div class="progress-track compact" aria-hidden="true"><span id="mission-progress-bar"></span></div>
               <div id="mission-list" class="mission-list"></div>
             </section>
 
-            <section class="section-card" aria-labelledby="facts-title">
-              <div class="section-heading"><div><span class="section-kicker">Know the route</span><h2 id="facts-title">Field notes</h2></div></div>
+            <section id="facts-card" class="section-card mode-card facts-card" aria-labelledby="facts-title">
+              <div class="section-heading"><div><span id="facts-kicker" class="section-kicker">Know the route</span><h2 id="facts-title">Field notes</h2><p id="facts-intro" class="section-intro"></p></div></div>
               <div id="fact-list" class="fact-list"></div>
             </section>
 
-            <section class="section-card photo-mission-card" aria-labelledby="photo-mission-title">
-              <div class="section-heading"><div><span class="section-kicker">Frame the day</span><h2 id="photo-mission-title">Photo mission</h2></div></div>
+            <section id="photo-mission-card" class="section-card mode-card photo-mission-card" aria-labelledby="photo-mission-title">
+              <div class="section-heading"><div><span id="photo-kicker" class="section-kicker">Frame the day</span><h2 id="photo-mission-title">Photo mission</h2><p id="photo-intro" class="section-intro"></p></div></div>
               <p id="photo-mission-text"></p>
-              <label class="photo-check"><input id="photo-mission-check" type="checkbox"><span>Photo mission completed</span></label>
-              <p class="fine-print">RC1 records completion but does not yet store the photo itself.</p>
+              <label class="photo-check"><input id="photo-mission-check" type="checkbox"><span id="photo-completion-label">Photo mission completed</span></label>
+              <p id="photo-storage-note" class="fine-print">RC2 records completion but does not yet store the photo itself.</p>
             </section>
           </div>
 
-          <div class="adventure-column">
-            <section class="section-card road-quest-card" aria-labelledby="road-quest-title">
+          <div id="adventure-right-column" class="adventure-column">
+            <section id="road-quest-card" class="section-card mode-card road-quest-card" aria-labelledby="road-quest-title">
               <div class="section-heading">
-                <div><span class="section-kicker">Watch the road</span><h2 id="road-quest-title">Road Quest</h2></div>
+                <div><span id="road-quest-kicker" class="section-kicker">Watch the road</span><h2 id="road-quest-title">Road Quest</h2><p id="road-quest-intro" class="section-intro"></p></div>
                 <span id="sighting-total" class="sighting-total">0 finds</span>
               </div>
-              <p class="honour-note">Honor system: count only what you genuinely spot. Bonus credibility for a second-person verification.</p>
+              <p id="road-quest-note" class="honour-note">Honor system: count only what you genuinely spot. Bonus credibility for a second-person verification.</p>
               <div id="spotting-grid" class="spotting-grid"></div>
             </section>
 
-            <section class="section-card journal-card" aria-labelledby="journal-title">
+            <section id="journal-card" class="section-card mode-card journal-card" aria-labelledby="journal-title">
               <div class="section-heading">
-                <div><span class="section-kicker">Remember it</span><h2 id="journal-title">Daily field journal</h2></div>
+                <div><span id="journal-kicker" class="section-kicker">Remember it</span><h2 id="journal-title">Daily field journal</h2><p id="journal-intro" class="section-intro"></p></div>
                 <span id="journal-save-status" class="save-status" aria-live="polite"></span>
               </div>
-              <div id="rating-control" class="rating-control" aria-label="Rate the day"></div>
+              <p id="rating-prompt" class="rating-prompt">Rate the day</p><div id="rating-control" class="rating-control" aria-label="Rate the day"></div>
               <div id="journal-fields" class="journal-fields"></div>
             </section>
 
-            <section id="day-badge-card" class="section-card badge-claim-card" aria-labelledby="day-badge-title"></section>
+            <section id="day-badge-card" class="section-card mode-card badge-claim-card" aria-labelledby="day-badge-title"></section>
           </div>
         </div>
 
@@ -282,7 +282,7 @@
               <button class="primary-button" type="button" data-action="refresh-app">Refresh app now</button>
               <button class="secondary-button" type="button" data-action="check-update">Check for update</button>
             </div>
-            <p class="version-line">Version <strong id="app-version">0.3.0 RC1</strong> · built <span id="build-date">2026-07-27</span></p>
+            <p class="version-line">Version <strong id="app-version">0.3.0 RC2</strong> · built <span id="build-date">2026-07-27</span></p>
           </section>
 
           <section class="section-card" aria-labelledby="backup-title">
@@ -377,7 +377,7 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-  <script src="road-data.js?v=0.3.0-rc1"></script>
-  <script src="app.js?v=0.3.0-rc1"></script>
+  <script src="road-data.js?v=0.3.0-rc2"></script>
+  <script src="app.js?v=0.3.0-rc2"></script>
 </body>
 </html>

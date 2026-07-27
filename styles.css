@@ -703,3 +703,190 @@ p { line-height: 1.55; }
   .day-card { break-inside: avoid; box-shadow: none; }
   .day-details { display: block !important; }
 }
+
+/* v0.3.0 RC2: clearly differentiated Navigator and Explorer experiences */
+#view-adventure[data-experience="navigator"] {
+  --mode-accent: #4b58a7;
+  --mode-accent-soft: #eceefe;
+  --mode-ink: #26336f;
+  --mode-panel: #f7f8fd;
+}
+#view-adventure[data-experience="explorer"] {
+  --mode-accent: #1f776f;
+  --mode-accent-soft: #e6f5f2;
+  --mode-ink: #155b55;
+  --mode-panel: #f4fbf9;
+}
+#view-adventure .mode-card {
+  border-top: 3px solid var(--mode-accent);
+}
+#view-adventure .section-intro {
+  margin: 5px 0 0;
+  max-width: 560px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 500;
+}
+.brief-mode-row {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 13px;
+  padding: 8px 11px;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 14px;
+  background: rgba(255,255,255,.10);
+}
+.brief-mode-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: rgba(255,255,255,.14);
+  font-size: 18px;
+  font-weight: 900;
+}
+.brief-mode-row span:last-child { display: grid; gap: 2px; }
+.brief-mode-row strong { font-size: 12px; }
+.brief-mode-row small { color: rgba(255,255,255,.72); font-size: 9px; letter-spacing: .12em; font-weight: 850; }
+.mission-briefing.mode-navigator {
+  background:
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(135deg, #242e5f, #344b83 58%, #315d72);
+  background-size: 28px 28px, 28px 28px, auto;
+}
+.mission-briefing.mode-explorer {
+  background: linear-gradient(135deg, #17665f, #248678 58%, #b96f39);
+}
+#view-adventure[data-experience="navigator"] .mission-briefing::after {
+  border-radius: 18px;
+  transform: rotate(18deg);
+}
+#view-adventure[data-experience="explorer"] .mission-briefing::after {
+  border-width: 24px;
+}
+#view-adventure[data-experience="navigator"] .section-kicker,
+#view-adventure[data-experience="navigator"] .progress-label,
+#view-adventure[data-experience="navigator"] .sighting-total {
+  color: var(--mode-accent);
+}
+#view-adventure[data-experience="explorer"] .section-kicker,
+#view-adventure[data-experience="explorer"] .progress-label,
+#view-adventure[data-experience="explorer"] .sighting-total {
+  color: var(--mode-accent);
+}
+#view-adventure .progress-track span { background: var(--mode-accent); }
+#view-adventure .mission-item {
+  grid-template-columns: 22px 28px minmax(0, 1fr);
+  background: var(--mode-panel);
+}
+#view-adventure .mission-item input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--mode-accent);
+}
+#view-adventure .mission-sequence {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--mode-accent-soft);
+  color: var(--mode-ink);
+  font-size: 11px;
+  font-weight: 900;
+  text-decoration: none !important;
+}
+#view-adventure .mission-copy { min-width: 0; }
+#view-adventure[data-experience="navigator"] .mission-item {
+  border-left: 4px solid var(--mode-accent);
+  border-radius: 10px;
+}
+#view-adventure[data-experience="explorer"] .mission-item {
+  border-radius: 17px;
+}
+#view-adventure[data-experience="explorer"] .mission-sequence {
+  border-radius: 50%;
+}
+#view-adventure .fact-card {
+  background: linear-gradient(135deg, var(--mode-panel), #ffffff);
+  border-color: color-mix(in srgb, var(--mode-accent) 20%, var(--line));
+}
+#view-adventure .fact-prompt { color: var(--mode-ink); }
+#view-adventure .photo-check input { accent-color: var(--mode-accent); }
+#view-adventure .spot-card {
+  background: var(--mode-panel);
+  border-color: color-mix(in srgb, var(--mode-accent) 18%, var(--line));
+}
+#view-adventure .spot-icon {
+  background: var(--mode-accent-soft);
+  color: var(--mode-ink);
+}
+#view-adventure[data-experience="navigator"] .spot-card {
+  border-radius: 10px;
+  border-left: 3px solid var(--mode-accent);
+}
+#view-adventure[data-experience="navigator"] .spot-icon {
+  border-radius: 8px;
+}
+#view-adventure[data-experience="explorer"] .spot-card {
+  border-radius: 18px;
+}
+#view-adventure[data-experience="explorer"] .spot-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  font-size: 16px;
+}
+#view-adventure[data-experience="explorer"] .spot-card-head {
+  grid-template-columns: 42px 1fr;
+}
+#view-adventure .counter-control button { color: var(--mode-ink); }
+.rating-prompt {
+  margin: 0 0 8px;
+  color: var(--mode-ink);
+  font-size: 12px;
+  font-weight: 800;
+}
+#day-badge-card[data-experience="navigator"] .badge-symbol {
+  background: var(--indigo-soft);
+  color: var(--indigo);
+  border-radius: 12px;
+}
+#day-badge-card[data-experience="explorer"] .badge-symbol {
+  background: var(--teal-soft);
+  color: var(--teal);
+  border-radius: 50%;
+}
+.tomorrow-teaser.mode-navigator {
+  background:
+    linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px),
+    linear-gradient(135deg, #20283f, #33476f);
+  background-size: 26px 26px, 26px 26px, auto;
+}
+.tomorrow-teaser.mode-explorer {
+  background: linear-gradient(135deg, #203f40, #236c66 62%, #8c5837);
+}
+.profile-pick-button small,
+.profile-card small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.35;
+}
+.profile-card[data-experience="navigator"] { border-left: 4px solid var(--indigo); }
+.profile-card[data-experience="explorer"] { border-left: 4px solid var(--teal); }
+.profile-pill[data-experience="navigator"] { box-shadow: inset 0 0 0 1px rgba(75,88,167,.22); }
+.profile-pill[data-experience="explorer"] { box-shadow: inset 0 0 0 1px rgba(31,119,111,.22); }
+
+@media (max-width: 759px) {
+  #view-adventure[data-experience="explorer"] .spotting-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  #view-adventure[data-experience="navigator"] .spotting-grid { grid-template-columns: 1fr; }
+}

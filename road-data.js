@@ -3,8 +3,8 @@ window.BOBSX4_DATA = {
     "id": "bobsx4-road-companion",
     "name": "Bobsx4 Road Companion",
     "shortName": "Road Companion",
-    "version": "0.3.0 RC1",
-    "versionCode": "0.3.0-rc1",
+    "version": "0.3.0 RC2",
+    "versionCode": "0.3.0-rc2",
     "buildDate": "2026-07-27",
     "dataSchema": 3,
     "tagline": "Adventure is where you are going. Road Companion is how you will remember it."
@@ -14,7 +14,7 @@ window.BOBSX4_DATA = {
       "id": "navigator",
       "name": "Navigator",
       "experience": "navigator",
-      "roleLabel": "Independent traveller",
+      "roleLabel": "Co-pilot and field reporter",
       "initials": "N",
       "accent": "indigo"
     },
@@ -22,7 +22,7 @@ window.BOBSX4_DATA = {
       "id": "explorer",
       "name": "Explorer",
       "experience": "explorer",
-      "roleLabel": "Visual explorer",
+      "roleLabel": "Spotter and adventure collector",
       "initials": "E",
       "accent": "teal"
     }
@@ -311,6 +311,168 @@ window.BOBSX4_DATA = {
             "teaser": {
               "title": "Tomorrow: border to alpine country",
               "text": "An early border crossing leads to Going-to-the-Sun Road, Logan Pass, and the first mountain overnight in Kalispell."
+            },
+            "modes": {
+              "navigator": {
+                "briefing": "Launch night is a real co-pilot assignment: predict the arrival, protect the schedule, and help the family reach Lethbridge ready for an early border-and-mountains morning.",
+                "missions": [
+                  {
+                    "id": "nav-arrival-prediction",
+                    "label": "Predict the Lethbridge arrival time before leaving Edmonton",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-efficient-stop",
+                    "label": "Choose one fuel or food stop that adds no more than about 10 minutes",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-arrival-variance",
+                    "label": "Compare the actual hotel arrival with your prediction",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-morning-stage",
+                    "label": "Help stage passports, chargers, and warm layers for the early start",
+                    "audience": "navigator"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "nav-highway-interchange",
+                    "label": "Major highway interchange",
+                    "icon": "⇄",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-jurisdiction-plate",
+                    "label": "Different province or state plate",
+                    "icon": "▣",
+                    "target": 4
+                  },
+                  {
+                    "id": "nav-freight-train",
+                    "label": "Freight train",
+                    "icon": "↔",
+                    "target": 2
+                  },
+                  {
+                    "id": "nav-wind-farm",
+                    "label": "Wind-farm cluster",
+                    "icon": "✦",
+                    "target": 2
+                  },
+                  {
+                    "id": "nav-distance-sign",
+                    "label": "Distance sign for Lethbridge",
+                    "icon": "↧",
+                    "target": 2
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "Route rhythm",
+                    "text": "A good first-night route is less about sightseeing and more about protecting tomorrow. One efficient stop is usually better than several short ones.",
+                    "prompt": "Which stop saved the most time without making the drive less comfortable?"
+                  },
+                  {
+                    "title": "ETA accuracy",
+                    "text": "Arrival estimates improve when you include the time spent leaving the city, taking breaks, and checking in—not only the highway travel time.",
+                    "prompt": "How many minutes early or late was your prediction?"
+                  }
+                ],
+                "photoMission": "Take one image that clearly shows the transition from city travel to the open road.",
+                "badge": {
+                  "id": "launch-coordinator",
+                  "name": "Launch Coordinator",
+                  "icon": "⌁",
+                  "description": "Protected the first-night schedule and helped prepare the next morning."
+                },
+                "teaser": {
+                  "title": "Next dispatch: border and alpine road",
+                  "text": "Tomorrow requires passports, an early start, changing weather, and a full east-to-west crossing of Glacier National Park."
+                }
+              },
+              "explorer": {
+                "briefing": "The adventure begins after a busy Edmonton day. Start the official soundtrack, watch the prairie change, and collect the first real sightings of the trip.",
+                "missions": [
+                  {
+                    "id": "exp-launch-song",
+                    "label": "Choose the first official road-trip song",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-first-elevator",
+                    "label": "Be the first to spot a grain elevator",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-map-lethbridge",
+                    "label": "Find Lethbridge on the route map without searching by name",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-hotel-helper",
+                    "label": "Help set out chargers and tomorrow’s warm layers at the hotel",
+                    "audience": "explorer"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "exp-grain-elevator",
+                    "label": "Grain elevator",
+                    "icon": "▥",
+                    "target": 2
+                  },
+                  {
+                    "id": "exp-train",
+                    "label": "Freight train",
+                    "icon": "↔",
+                    "target": 2
+                  },
+                  {
+                    "id": "exp-wind-turbine",
+                    "label": "Wind turbine",
+                    "icon": "✦",
+                    "target": 5
+                  },
+                  {
+                    "id": "exp-red-barn",
+                    "label": "Red barn",
+                    "icon": "⌂",
+                    "target": 3
+                  },
+                  {
+                    "id": "exp-sunset",
+                    "label": "Great sunset view",
+                    "icon": "◐",
+                    "target": 1
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "Prairie transition",
+                    "text": "The drive south crosses broad farm country before dropping toward the Oldman River valley near Lethbridge.",
+                    "prompt": "Watch for the moment the land stops feeling completely flat."
+                  },
+                  {
+                    "title": "First-night mission",
+                    "text": "Tonight is mostly about getting into road-trip mode. The big mountain scenery begins tomorrow.",
+                    "prompt": "What was the first thing that made the trip feel real?"
+                  }
+                ],
+                "photoMission": "Capture the best sunset colour or first “we are really on vacation” moment.",
+                "badge": {
+                  "id": "open-road-scout",
+                  "name": "Open-Road Scout",
+                  "icon": "◎",
+                  "description": "Started the adventure by spotting the first signs of the road ahead."
+                },
+                "teaser": {
+                  "title": "Tomorrow: the road climbs into the mountains",
+                  "text": "Watch for waterfalls, summer snow, red park buses, and wildlife as the family crosses Glacier National Park."
+                }
+              }
             }
           }
         },
@@ -478,6 +640,190 @@ window.BOBSX4_DATA = {
             "teaser": {
               "title": "Tomorrow: a time-zone hop",
               "text": "After breakfast in Kalispell, the route turns west into Idaho and reaches Coeur d’Alene for a two-night base."
+            },
+            "modes": {
+              "navigator": {
+                "briefing": "This is the most demanding route day: border timing, park congestion, steep terrain, weather changes, and a major scenic crossing. Build a useful field record instead of only collecting views.",
+                "missions": [
+                  {
+                    "id": "nav-border-ready",
+                    "label": "Confirm passports are ready before the Carway approach",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-logan-estimate",
+                    "label": "Estimate the time from the border to Logan Pass, then compare it later",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-elevation-change",
+                    "label": "Record one clear change caused by elevation: temperature, plants, snow, or cloud",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-park-priority",
+                    "label": "Identify the one park stop that added the most value to the day",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-kalispell-arrival",
+                    "label": "Note the actual Kalispell arrival time and the biggest delay",
+                    "audience": "navigator"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "nav-border-lane",
+                    "label": "Border lane or inspection sign",
+                    "icon": "║",
+                    "target": 2
+                  },
+                  {
+                    "id": "nav-red-bus",
+                    "label": "Red park bus",
+                    "icon": "▰",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-road-engineering",
+                    "label": "Road-engineering feature",
+                    "icon": "⌇",
+                    "target": 4
+                  },
+                  {
+                    "id": "nav-weather-shift",
+                    "label": "Visible weather change",
+                    "icon": "◒",
+                    "target": 2
+                  },
+                  {
+                    "id": "nav-wildlife-slowdown",
+                    "label": "Wildlife traffic slowdown",
+                    "icon": "!",
+                    "target": 1
+                  },
+                  {
+                    "id": "nav-divide-marker",
+                    "label": "Continental Divide marker",
+                    "icon": "△",
+                    "target": 1
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "The Continental Divide",
+                    "text": "At Logan Pass, water on opposite sides of the divide ultimately drains toward different ocean systems.",
+                    "prompt": "Which side of the pass looked wetter or greener today?"
+                  },
+                  {
+                    "title": "Road design as scenery",
+                    "text": "Going-to-the-Sun Road is part transportation and part engineering solution, using retaining walls, curves, and narrow ledges to cross alpine terrain.",
+                    "prompt": "Which road feature looked hardest to build?"
+                  }
+                ],
+                "photoMission": "Photograph one detail that explains elevation—snow, alpine plants, cloud, exposed rock, or the road itself.",
+                "badge": {
+                  "id": "divide-correspondent",
+                  "name": "Divide Correspondent",
+                  "icon": "⌁",
+                  "description": "Observed how route, weather, and landscape changed across the Continental Divide."
+                },
+                "teaser": {
+                  "title": "Next dispatch: use the time-zone gain",
+                  "text": "Tomorrow is calmer. The assignment is to notice the Pacific Time change and reach Coeur d’Alene with enough day left to enjoy it."
+                }
+              },
+              "explorer": {
+                "briefing": "Today the road climbs into Glacier National Park. Watch for waterfalls, snow patches, wildlife, red buses, and the Continental Divide sign before descending toward Kalispell.",
+                "missions": [
+                  {
+                    "id": "exp-us-sign",
+                    "label": "Spot the United States entry sign",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-divide",
+                    "label": "Find the Continental Divide marker at Logan Pass",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-warm-layer",
+                    "label": "Remember a warm layer before leaving the vehicle at high elevation",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-favourite-view",
+                    "label": "Choose your favourite viewpoint before leaving the park",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-animal-id",
+                    "label": "Identify at least one wild animal correctly",
+                    "audience": "explorer"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "exp-mountain-goat",
+                    "label": "Mountain goat",
+                    "icon": "M",
+                    "target": 1
+                  },
+                  {
+                    "id": "exp-bighorn",
+                    "label": "Bighorn sheep",
+                    "icon": "B",
+                    "target": 1
+                  },
+                  {
+                    "id": "exp-waterfall",
+                    "label": "Roadside waterfall",
+                    "icon": "≈",
+                    "target": 3
+                  },
+                  {
+                    "id": "exp-snow",
+                    "label": "Summer snow patch",
+                    "icon": "*",
+                    "target": 3
+                  },
+                  {
+                    "id": "exp-red-bus",
+                    "label": "Red park bus",
+                    "icon": "▰",
+                    "target": 3
+                  },
+                  {
+                    "id": "exp-wildlife-jam",
+                    "label": "Wildlife traffic jam",
+                    "icon": "!",
+                    "target": 1
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "High country in summer",
+                    "text": "Even in late July, alpine areas can hold snow and feel much colder than the valleys below.",
+                    "prompt": "What changed first as the road climbed—temperature, plants, or snow?"
+                  },
+                  {
+                    "title": "Two sides of one mountain",
+                    "text": "The east and west sides of Glacier can look surprisingly different because wind, elevation, and moisture shape the landscape.",
+                    "prompt": "Which side did you like better?"
+                  }
+                ],
+                "photoMission": "Take a photo that includes mountains, sky, and water in the same frame.",
+                "badge": {
+                  "id": "alpine-explorer",
+                  "name": "Alpine Explorer",
+                  "icon": "◎",
+                  "description": "Crossed the mountains while spotting the signs of high-elevation country."
+                },
+                "teaser": {
+                  "title": "Tomorrow: a new state and a lake city",
+                  "text": "The clocks move back one hour as Montana gives way to Idaho and Coeur d’Alene becomes home for two nights."
+                }
+              }
             }
           }
         },
@@ -615,6 +961,190 @@ window.BOBSX4_DATA = {
             "teaser": {
               "title": "Tomorrow: field test Silverwood",
               "text": "Rides, water slides, and one full day to decide which attraction deserves the family’s top rating."
+            },
+            "modes": {
+              "navigator": {
+                "briefing": "Use the time-zone gain strategically: monitor the route, choose a sensible stop, and arrive early enough for Coeur d’Alene to feel like a destination rather than only a hotel.",
+                "missions": [
+                  {
+                    "id": "nav-time-change",
+                    "label": "Record when the phone changes from Mountain to Pacific Time",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-arrival-with-gain",
+                    "label": "Estimate the arrival twice: once by elapsed time and once by local clock time",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-lunch-choice",
+                    "label": "Choose a lunch stop that does not create a large detour",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-route-transition",
+                    "label": "Describe where the route begins to feel more like northern Idaho",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-cda-window",
+                    "label": "Protect at least one useful hour in Coeur d’Alene before dinner",
+                    "audience": "navigator"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "nav-time-alert",
+                    "label": "Time-zone change alert",
+                    "icon": "◷",
+                    "target": 1
+                  },
+                  {
+                    "id": "nav-idaho-sign",
+                    "label": "Idaho state-line sign",
+                    "icon": "ID",
+                    "target": 1
+                  },
+                  {
+                    "id": "nav-logging-truck",
+                    "label": "Logging truck",
+                    "icon": "▤",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-river-bridge",
+                    "label": "Major river bridge",
+                    "icon": "⌒",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-rail-corridor",
+                    "label": "Rail line beside the route",
+                    "icon": "═",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-lake-reveal",
+                    "label": "First clear lake reveal",
+                    "icon": "≈",
+                    "target": 1
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "A useful hour",
+                    "text": "Crossing into Pacific Time makes the clock look earlier even though the actual travel time does not change.",
+                    "prompt": "How much did the time-zone change improve the evening?"
+                  },
+                  {
+                    "title": "Place-setting photo",
+                    "text": "A strong travel record includes one image that clearly establishes where the family arrived—not only close-ups and food photos.",
+                    "prompt": "What single scene says “Coeur d’Alene” today?"
+                  }
+                ],
+                "photoMission": "Create one clean place-setting image that clearly says Coeur d’Alene without needing a caption.",
+                "badge": {
+                  "id": "time-zone-navigator",
+                  "name": "Time-Zone Navigator",
+                  "icon": "⌁",
+                  "description": "Used the Pacific Time change to improve the arrival instead of losing the extra hour."
+                },
+                "teaser": {
+                  "title": "Next dispatch: test the park like a reviewer",
+                  "text": "Tomorrow is Silverwood. Track waits, compare attractions, and build a top-three list you can defend."
+                }
+              },
+              "explorer": {
+                "briefing": "Today is a calmer mountain drive. Watch the clock jump back one hour, spot the Idaho sign, and look for the first big lake view before reaching Coeur d’Alene.",
+                "missions": [
+                  {
+                    "id": "exp-time-change",
+                    "label": "Notice when the phone changes to Pacific Time",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-idaho-sign",
+                    "label": "Spot the Idaho state-line sign",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-map-lake",
+                    "label": "Find Lake Coeur d’Alene on the map before arriving",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-road-snack",
+                    "label": "Choose one road snack for the drive",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-first-cda",
+                    "label": "Pick the first thing you want to see in Coeur d’Alene",
+                    "audience": "explorer"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "exp-idaho-plate",
+                    "label": "Idaho plate",
+                    "icon": "ID",
+                    "target": 4
+                  },
+                  {
+                    "id": "exp-osprey",
+                    "label": "Osprey",
+                    "icon": "V",
+                    "target": 1
+                  },
+                  {
+                    "id": "exp-boat",
+                    "label": "Boat being towed",
+                    "icon": "⌁",
+                    "target": 2
+                  },
+                  {
+                    "id": "exp-bridge",
+                    "label": "River bridge",
+                    "icon": "⌒",
+                    "target": 3
+                  },
+                  {
+                    "id": "exp-lake-view",
+                    "label": "First lake view",
+                    "icon": "≈",
+                    "target": 1
+                  },
+                  {
+                    "id": "exp-funny-sign",
+                    "label": "Funny roadside sign",
+                    "icon": "?",
+                    "target": 1
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "The clock moves backward",
+                    "text": "Northern Idaho is in Pacific Time, so the local clock becomes one hour earlier during the drive.",
+                    "prompt": "Did the extra clock hour make the day feel longer?"
+                  },
+                  {
+                    "title": "Lake beside the city",
+                    "text": "Coeur d’Alene is built around a large lake, marina, parks, and a walkable downtown.",
+                    "prompt": "What was the first thing that made it feel like a lake city?"
+                  }
+                ],
+                "photoMission": "Take a first-arrival photo that makes Coeur d’Alene look exciting.",
+                "badge": {
+                  "id": "lakebound-scout",
+                  "name": "Lakebound Scout",
+                  "icon": "◎",
+                  "description": "Found a new state, a new time zone, and the first view of the lake city."
+                },
+                "teaser": {
+                  "title": "Tomorrow: coasters, slides, and a serious splash",
+                  "text": "Silverwood is the biggest thrill day. Which will win—roller coasters or the water park?"
+                }
+              }
             }
           }
         },
@@ -759,6 +1289,190 @@ window.BOBSX4_DATA = {
             "teaser": {
               "title": "Tomorrow: retail mission, then Sandpoint",
               "text": "The route swings through Spokane Valley shopping before turning north to a smaller downtown beside Lake Pend Oreille."
+            },
+            "modes": {
+              "navigator": {
+                "briefing": "Act as a park reviewer rather than a passenger. Track wait times, test one attraction outside your usual comfort zone, and produce a defensible top-three list.",
+                "missions": [
+                  {
+                    "id": "nav-opening-strategy",
+                    "label": "Choose the first attraction based on location and expected queue",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-wait-log",
+                    "label": "Record the longest posted or experienced wait of the day",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-top-three",
+                    "label": "Rank the top three attractions and give one reason for each",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-efficiency",
+                    "label": "Identify one decision that saved the family time",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-comfort-zone",
+                    "label": "Try one attraction outside your usual comfort zone",
+                    "audience": "navigator"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "nav-short-queue",
+                    "label": "Queue under 15 minutes",
+                    "icon": "<",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-long-queue",
+                    "label": "Queue over 30 minutes",
+                    "icon": ">",
+                    "target": 1
+                  },
+                  {
+                    "id": "nav-dispatch",
+                    "label": "Fast ride dispatch",
+                    "icon": "↗",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-inversion",
+                    "label": "Coaster inversion",
+                    "icon": "∞",
+                    "target": 5
+                  },
+                  {
+                    "id": "nav-train-whistle",
+                    "label": "Train whistle",
+                    "icon": "↔",
+                    "target": 2
+                  },
+                  {
+                    "id": "nav-recovery-plan",
+                    "label": "Good shade or recovery stop",
+                    "icon": "□",
+                    "target": 2
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "Park origin",
+                    "text": "Silverwood grew from an airfield and aviation attraction into a combined theme park and water park.",
+                    "prompt": "Can you still spot clues that aviation is part of the park’s identity?"
+                  },
+                  {
+                    "title": "The best ride is not always the biggest",
+                    "text": "Queue, comfort, repeatability, and the people you rode with can matter as much as height or speed.",
+                    "prompt": "What makes your number-one choice better than the others?"
+                  }
+                ],
+                "photoMission": "Take one dynamic image that communicates motion without relying on an on-ride camera.",
+                "badge": {
+                  "id": "park-analyst",
+                  "name": "Park Analyst",
+                  "icon": "⌁",
+                  "description": "Reviewed the park with evidence, timing, and a reasoned top-three list."
+                },
+                "teaser": {
+                  "title": "Next dispatch: retail route planning",
+                  "text": "Tomorrow combines priority stores, Spokane-area traffic, receipts, and an evening arrival in Sandpoint."
+                }
+              },
+              "explorer": {
+                "briefing": "Today is the biggest thrill day. Try something new, keep track of the funniest moments, and decide whether the water park or the coasters win.",
+                "missions": [
+                  {
+                    "id": "exp-new-ride",
+                    "label": "Try one ride or slide you have never done before",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-favourite-ride",
+                    "label": "Choose your number-one ride before leaving",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-get-soaked",
+                    "label": "Get properly soaked at least once",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-family-photo",
+                    "label": "Get one family photo before everyone is exhausted",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-meeting-point",
+                    "label": "Remember the family meeting point without asking again",
+                    "audience": "explorer"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "exp-inversion",
+                    "label": "Coaster inversion",
+                    "icon": "∞",
+                    "target": 5
+                  },
+                  {
+                    "id": "exp-train-whistle",
+                    "label": "Train whistle",
+                    "icon": "↔",
+                    "target": 2
+                  },
+                  {
+                    "id": "exp-soaked-person",
+                    "label": "Completely soaked person",
+                    "icon": "≈",
+                    "target": 5
+                  },
+                  {
+                    "id": "exp-big-splash",
+                    "label": "Splash bigger than expected",
+                    "icon": "!",
+                    "target": 3
+                  },
+                  {
+                    "id": "exp-ride-photo",
+                    "label": "On-ride photo screen",
+                    "icon": "▣",
+                    "target": 2
+                  },
+                  {
+                    "id": "exp-happy-scream",
+                    "label": "Scream that turns into laughter",
+                    "icon": ":D",
+                    "target": 3
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "More than coasters",
+                    "text": "Silverwood includes a theme park, a water park, a train, shows, and attractions with very different thrill levels.",
+                    "prompt": "Which part of the park surprised you most?"
+                  },
+                  {
+                    "title": "Your own thrill scale",
+                    "text": "A ride can be scary before it starts and fantastic afterward—or the opposite.",
+                    "prompt": "Which ride changed your mind the most?"
+                  }
+                ],
+                "photoMission": "Capture the funniest wet-hair, post-ride, or victory reaction of the day.",
+                "badge": {
+                  "id": "thrill-seeker",
+                  "name": "Thrill Seeker",
+                  "icon": "◎",
+                  "description": "Tried something new and collected the best thrills, splashes, and reactions."
+                },
+                "teaser": {
+                  "title": "Tomorrow: stores first, Sandpoint later",
+                  "text": "Watch for American-only finds, unusual snacks, and the first sign that the route is leaving the city again."
+                }
+              }
             }
           }
         },
@@ -904,6 +1618,190 @@ window.BOBSX4_DATA = {
             "teaser": {
               "title": "Tomorrow: border, artisans, and a ferry",
               "text": "The route follows the Selkirk country into Canada, pauses near Crawford Bay, and drives onto a ferry across Kootenay Lake."
+            },
+            "modes": {
+              "navigator": {
+                "briefing": "Treat shopping like route planning. Group stops efficiently, protect the Sandpoint arrival, and record which purchase or discovery was genuinely worth the time.",
+                "missions": [
+                  {
+                    "id": "nav-store-order",
+                    "label": "Put the priority stores in an efficient travel order",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-departure-target",
+                    "label": "Set a target departure time from the Spokane area",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-receipt-control",
+                    "label": "Keep receipts and purchases organized for the return to Canada",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-worth-it",
+                    "label": "Choose the one stop or purchase that was most worth the time",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-sandpoint-buffer",
+                    "label": "Protect enough time for dinner or a short downtown browse in Sandpoint",
+                    "audience": "navigator"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "nav-state-plates",
+                    "label": "Different U.S. state plate",
+                    "icon": "▣",
+                    "target": 6
+                  },
+                  {
+                    "id": "nav-wayfinding",
+                    "label": "Shopping-centre wayfinding sign",
+                    "icon": "→",
+                    "target": 4
+                  },
+                  {
+                    "id": "nav-ev-bank",
+                    "label": "EV charger bank",
+                    "icon": "⚡",
+                    "target": 2
+                  },
+                  {
+                    "id": "nav-freight-train",
+                    "label": "Freight train",
+                    "icon": "↔",
+                    "target": 2
+                  },
+                  {
+                    "id": "nav-boat-trailer",
+                    "label": "Boat on a trailer",
+                    "icon": "⌁",
+                    "target": 4
+                  },
+                  {
+                    "id": "nav-mountain-parking",
+                    "label": "Mountain view from a parking lot",
+                    "icon": "△",
+                    "target": 2
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "A shopping day still has a route",
+                    "text": "Spokane Valley, Spokane, and the northbound road to Sandpoint can create backtracking if stores are chosen only by name.",
+                    "prompt": "Which stop order worked best, and which one should move next time?"
+                  },
+                  {
+                    "title": "Receipt control",
+                    "text": "Cross-border shopping is easier when receipts stay together and purchases are easy to describe.",
+                    "prompt": "Who became the official receipt keeper today?"
+                  }
+                ],
+                "photoMission": "Take a street-level image that presents Sandpoint as a town—not only as a lake destination.",
+                "badge": {
+                  "id": "retail-route-planner",
+                  "name": "Retail Route Planner",
+                  "icon": "⌁",
+                  "description": "Managed priority stores, timing, receipts, and the transition back to the road."
+                },
+                "teaser": {
+                  "title": "Next dispatch: border, artisans, and ferry timing",
+                  "text": "Tomorrow leaves the U.S., follows Kootenay Lake, and puts the vehicle onto a working inland ferry."
+                }
+              },
+              "explorer": {
+                "briefing": "Today is a store-and-road challenge. Find the family’s priority stops, watch for things you cannot usually buy at home, and save enough energy for Sandpoint.",
+                "missions": [
+                  {
+                    "id": "exp-priority-store",
+                    "label": "Reach the family’s priority store before optional stops",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-new-snack",
+                    "label": "Find one snack or item not normally seen at home",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-receipts",
+                    "label": "Help keep the shopping receipts together",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-best-find",
+                    "label": "Choose the best find of the day—even if you did not buy it",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-sandpoint-treat",
+                    "label": "Pick one dinner, dessert, or downtown treat for Sandpoint",
+                    "audience": "explorer"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "exp-target",
+                    "label": "Target bullseye",
+                    "icon": "◎",
+                    "target": 2
+                  },
+                  {
+                    "id": "exp-list-store",
+                    "label": "Store from the family list",
+                    "icon": "✓",
+                    "target": 5
+                  },
+                  {
+                    "id": "exp-washington-plate",
+                    "label": "Washington plate",
+                    "icon": "WA",
+                    "target": 5
+                  },
+                  {
+                    "id": "exp-rail-crossing",
+                    "label": "Rail crossing",
+                    "icon": "X",
+                    "target": 2
+                  },
+                  {
+                    "id": "exp-boat-trailer",
+                    "label": "Boat on a trailer",
+                    "icon": "⌁",
+                    "target": 4
+                  },
+                  {
+                    "id": "exp-mountain-view",
+                    "label": "Mountain view between stores",
+                    "icon": "△",
+                    "target": 2
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "Downtown beside the water",
+                    "text": "Sandpoint’s compact downtown sits close to the lake, marina, rail corridor, shops, and restaurants.",
+                    "prompt": "What makes it feel different from the Spokane shopping area?"
+                  },
+                  {
+                    "title": "Best find, not biggest bag",
+                    "text": "The most memorable discovery might be a snack, a strange product, a bargain, or something funny you never expected to see.",
+                    "prompt": "What was your best find?"
+                  }
+                ],
+                "photoMission": "Photograph the strangest, funniest, or most surprising thing found in a store today.",
+                "badge": {
+                  "id": "treasure-hunter",
+                  "name": "Treasure Hunter",
+                  "icon": "◎",
+                  "description": "Found the priority stops, unusual discoveries, and a favourite shopping-day memory."
+                },
+                "teaser": {
+                  "title": "Tomorrow: the car rides on a boat",
+                  "text": "After the border, watch for orchards, studios, birds over Kootenay Lake, and the ferry wake."
+                }
+              }
             }
           }
         },
@@ -1078,6 +1976,190 @@ window.BOBSX4_DATA = {
             "teaser": {
               "title": "Tomorrow: Boundary Country to the Okanagan",
               "text": "Historic towns, orchards, warm valley scenery, and a planned meetup in Penticton."
+            },
+            "modes": {
+              "navigator": {
+                "briefing": "This is a logistics-and-scenery day: border documents, rural fuel, ferry timing, and enough daylight to reach Nelson without rushing.",
+                "missions": [
+                  {
+                    "id": "nav-border-pack",
+                    "label": "Have passports and shopping receipts ready before the border booth",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-ferry-check",
+                    "label": "Check the ferry status or schedule before leaving Creston",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-queue-estimate",
+                    "label": "Estimate the ferry wait, then compare it with the actual queue",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-crossing-log",
+                    "label": "Record the approximate ferry departure and arrival times",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-photo-sequence",
+                    "label": "Create an approach–crossing–arrival photo sequence",
+                    "audience": "navigator"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "nav-ferry-route-sign",
+                    "label": "Ferry route sign",
+                    "icon": "→",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-queue-lane",
+                    "label": "Ferry queue lane",
+                    "icon": "║",
+                    "target": 2
+                  },
+                  {
+                    "id": "nav-artisan-sign",
+                    "label": "Working studio or artisan sign",
+                    "icon": "✎",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-navigation-marker",
+                    "label": "Marine marker or buoy",
+                    "icon": "•",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-ferry-wake",
+                    "label": "Visible ferry wake",
+                    "icon": "≈",
+                    "target": 1
+                  },
+                  {
+                    "id": "nav-canada-flag",
+                    "label": "Canadian flag after re-entry",
+                    "icon": "CA",
+                    "target": 2
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "The ferry is the highway",
+                    "text": "The Kootenay Lake Ferry is not merely a sightseeing cruise; it carries Highway 3A traffic across the lake.",
+                    "prompt": "How did loading and unloading compare with your expectation?"
+                  },
+                  {
+                    "title": "Schedule versus reality",
+                    "text": "A published sailing time does not include every summer queue. Good planning leaves room for one missed sailing.",
+                    "prompt": "How much buffer did the family actually use?"
+                  }
+                ],
+                "photoMission": "Build a three-image sequence: approach, crossing, and arrival.",
+                "badge": {
+                  "id": "ferry-operations",
+                  "name": "Ferry Operations",
+                  "icon": "⌁",
+                  "description": "Managed the border, queue, crossing, and arrival as one connected route."
+                },
+                "teaser": {
+                  "title": "Next dispatch: protect the Penticton meetup",
+                  "text": "Tomorrow’s Highway 3 route is scenic but slow. Choose only stops that earn their time."
+                }
+              },
+              "explorer": {
+                "briefing": "Today includes a border and a boat big enough to carry the car. Watch for orchard country, handmade objects, birds over the lake, and the ferry wake.",
+                "missions": [
+                  {
+                    "id": "exp-canada-sign",
+                    "label": "Spot the first Canadian flag or welcome sign after the border",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-handmade",
+                    "label": "Find one handmade object or working studio in Crawford Bay",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-deck",
+                    "label": "Step out on deck during the crossing if conditions allow",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-car-on-boat",
+                    "label": "Take a photo that proves the car is travelling by boat",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-lake-bird",
+                    "label": "Spot an osprey, eagle, or other large bird over the lake",
+                    "audience": "explorer"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "exp-canadian-flag",
+                    "label": "Canadian flag",
+                    "icon": "CA",
+                    "target": 2
+                  },
+                  {
+                    "id": "exp-orchard-row",
+                    "label": "Orchard row",
+                    "icon": "|||",
+                    "target": 4
+                  },
+                  {
+                    "id": "exp-studio-sign",
+                    "label": "Artisan studio sign",
+                    "icon": "✎",
+                    "target": 3
+                  },
+                  {
+                    "id": "exp-ferry",
+                    "label": "Ferry",
+                    "icon": "≈",
+                    "target": 1
+                  },
+                  {
+                    "id": "exp-eagle",
+                    "label": "Osprey or eagle",
+                    "icon": "V",
+                    "target": 1
+                  },
+                  {
+                    "id": "exp-reflection",
+                    "label": "Mountain reflection on the lake",
+                    "icon": "◇",
+                    "target": 1
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "A road that becomes a boat ride",
+                    "text": "The ferry carries vehicles and passengers across Kootenay Lake as part of the public highway route.",
+                    "prompt": "What felt strangest about driving onto a boat?"
+                  },
+                  {
+                    "title": "Nelson at the end",
+                    "text": "Nelson is known for a historic downtown, old buildings, shops, restaurants, and streets that climb above the lake.",
+                    "prompt": "Which building or storefront catches your eye first?"
+                  }
+                ],
+                "photoMission": "Take a photo from the ferry that proves the car is travelling by boat.",
+                "badge": {
+                  "id": "ferry-explorer",
+                  "name": "Ferry Explorer",
+                  "icon": "◎",
+                  "description": "Crossed the border, found the artisans, and rode the highway across the lake."
+                },
+                "teaser": {
+                  "title": "Tomorrow: fruit stands and two Penticton lakes",
+                  "text": "Watch the landscape warm up as the route leaves the Kootenays and heads toward orchards, vineyards, and the meetup."
+                }
+              }
             }
           }
         },
@@ -1218,6 +2300,190 @@ window.BOBSX4_DATA = {
             "teaser": {
               "title": "Tomorrow: kangaroos, capybaras, and a long northbound run",
               "text": "An early farm visit near Kelowna comes before the drive through Kamloops to Clearwater."
+            },
+            "modes": {
+              "navigator": {
+                "briefing": "Highway 3 is scenic but time-consuming. Protect the Penticton meetup, choose only one or two worthwhile stops, and document the landscape transition.",
+                "missions": [
+                  {
+                    "id": "nav-meetup-confirm",
+                    "label": "Confirm the Penticton meetup time before leaving Nelson",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-stop-value",
+                    "label": "Choose one route stop worth the time and explain why",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-midday-check",
+                    "label": "Compare actual progress with the planned midpoint time",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-landscape-shift",
+                    "label": "Record the clearest change from Kootenay to Okanagan landscape",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-arrival-buffer",
+                    "label": "Reach Penticton with the planned meetup buffer intact",
+                    "audience": "navigator"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "nav-pass-sign",
+                    "label": "Mountain pass or summit sign",
+                    "icon": "△",
+                    "target": 2
+                  },
+                  {
+                    "id": "nav-route-junction",
+                    "label": "Major route junction",
+                    "icon": "Y",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-fruit-truck",
+                    "label": "Fruit truck or orchard bin",
+                    "icon": "▤",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-vineyard",
+                    "label": "Vineyard rows",
+                    "icon": "|||",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-lake-reveal",
+                    "label": "Major lake reveal",
+                    "icon": "≈",
+                    "target": 2
+                  },
+                  {
+                    "id": "nav-heritage-street",
+                    "label": "Historic main street",
+                    "icon": "▥",
+                    "target": 2
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "Scenic does not mean quick",
+                    "text": "Highway 3 crosses varied terrain and communities, so the best stop is the one that adds value without threatening the meetup.",
+                    "prompt": "Which possible stop did you deliberately skip, and was that the right call?"
+                  },
+                  {
+                    "title": "Two-lake arrival",
+                    "text": "Penticton sits between Okanagan Lake and Skaha Lake, creating two waterfronts with very different directions and views.",
+                    "prompt": "Which lake did you notice first?"
+                  }
+                ],
+                "photoMission": "Take one image that shows the visual change from Kootenay mountains to Okanagan landscape.",
+                "badge": {
+                  "id": "route-editor",
+                  "name": "Route Editor",
+                  "icon": "⌁",
+                  "description": "Protected the meetup by choosing route stops for value rather than quantity."
+                },
+                "teaser": {
+                  "title": "Next dispatch: a hard closing time and a long drive",
+                  "text": "Kangaroo Creek Farm closes at 3:00 PM, and Clearwater is still several hours away. Tomorrow needs a real departure plan."
+                }
+              },
+              "explorer": {
+                "briefing": "Today moves from mountain-town streets to orchards and warm lakes. Watch for fruit stands, vineyards, colourful roadside stops, and the first sign that the Okanagan is close.",
+                "missions": [
+                  {
+                    "id": "exp-fruit-stop",
+                    "label": "Find a BC fruit stand or orchard product",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-two-lakes",
+                    "label": "Find both Okanagan Lake and Skaha Lake on the map",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-fruit-choice",
+                    "label": "Choose one local fruit, drink, or snack to try",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-warm-change",
+                    "label": "Spot the moment the landscape starts looking warmer and drier",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-meetup-photo",
+                    "label": "Take one photo connected to the Penticton meetup",
+                    "audience": "explorer"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "exp-fruit-stand",
+                    "label": "Fruit stand",
+                    "icon": "●",
+                    "target": 3
+                  },
+                  {
+                    "id": "exp-vineyard",
+                    "label": "Vineyard rows",
+                    "icon": "|||",
+                    "target": 3
+                  },
+                  {
+                    "id": "exp-orchard-bin",
+                    "label": "Orchard bin or fruit truck",
+                    "icon": "▤",
+                    "target": 3
+                  },
+                  {
+                    "id": "exp-lake-view",
+                    "label": "Long lake view",
+                    "icon": "≈",
+                    "target": 2
+                  },
+                  {
+                    "id": "exp-colourful-sign",
+                    "label": "Colourful roadside sign",
+                    "icon": "!",
+                    "target": 3
+                  },
+                  {
+                    "id": "exp-old-main-street",
+                    "label": "Old-fashioned main street",
+                    "icon": "▥",
+                    "target": 2
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "Between two lakes",
+                    "text": "Penticton is squeezed between Okanagan Lake to the north and Skaha Lake to the south.",
+                    "prompt": "Which waterfront would you choose for an evening walk?"
+                  },
+                  {
+                    "title": "Orchard country",
+                    "text": "The warmer Okanagan climate supports orchards, vineyards, roadside produce, and long summer evenings.",
+                    "prompt": "Which fruit looked best today?"
+                  }
+                ],
+                "photoMission": "Photograph the brightest fruit, most colourful stand, or best first view of Penticton.",
+                "badge": {
+                  "id": "orchard-scout",
+                  "name": "Orchard Scout",
+                  "icon": "◎",
+                  "description": "Followed the fruit stands and warm landscape all the way into Penticton."
+                },
+                "teaser": {
+                  "title": "Tomorrow: kangaroos before waterfall country",
+                  "text": "Pick a favourite animal, learn something unexpected, and then watch the landscape change on the long drive north."
+                }
+              }
             }
           }
         },
@@ -1377,6 +2643,190 @@ window.BOBSX4_DATA = {
             "teaser": {
               "title": "Tomorrow: waterfall survey and the Rockies",
               "text": "Wells Gray, Mount Robson country, Jasper, a time-zone change, and the final overnight in Hinton."
+            },
+            "modes": {
+              "navigator": {
+                "briefing": "The farm has a hard closing time and Clearwater is still several hours away. Manage the visit, document animal behaviour, and protect the afternoon schedule.",
+                "missions": [
+                  {
+                    "id": "nav-farm-arrival",
+                    "label": "Arrive at Kangaroo Creek Farm with enough time for a relaxed visit",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-behaviour-note",
+                    "label": "Document one animal behaviour rather than only naming the species",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-departure-plan",
+                    "label": "Choose a farm departure time and help the family keep it",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-fuel-lunch",
+                    "label": "Identify an efficient lunch or fuel stop for the northbound drive",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-terrain-shift",
+                    "label": "Record where the route stops feeling like the Okanagan",
+                    "audience": "navigator"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "nav-hopping",
+                    "label": "Animal hopping or bounding",
+                    "icon": "↗",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-feeding",
+                    "label": "Animal eating or foraging",
+                    "icon": "+",
+                    "target": 4
+                  },
+                  {
+                    "id": "nav-resting",
+                    "label": "Animal resting in shade",
+                    "icon": "—",
+                    "target": 4
+                  },
+                  {
+                    "id": "nav-grooming",
+                    "label": "Animal grooming",
+                    "icon": "~",
+                    "target": 2
+                  },
+                  {
+                    "id": "nav-social",
+                    "label": "Animal social interaction",
+                    "icon": "∞",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-keeper",
+                    "label": "Keeper or staff explanation",
+                    "icon": "i",
+                    "target": 1
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "Behaviour tells the story",
+                    "text": "A useful animal portrait records what the animal is doing—resting, eating, watching, moving, or interacting—not only what species it is.",
+                    "prompt": "Which behaviour best revealed an animal’s personality?"
+                  },
+                  {
+                    "title": "The schedule matters",
+                    "text": "The farm visit is only the first part of a long travel day. A planned departure protects the Clearwater arrival.",
+                    "prompt": "Did the family leave within 15 minutes of the target?"
+                  }
+                ],
+                "photoMission": "Create an animal portrait that shows behaviour or personality, not only the enclosure.",
+                "badge": {
+                  "id": "wildlife-correspondent",
+                  "name": "Wildlife Correspondent",
+                  "icon": "⌁",
+                  "description": "Documented animal behaviour while keeping the long travel day on schedule."
+                },
+                "teaser": {
+                  "title": "Next dispatch: choose the waterfall, then cross time zones",
+                  "text": "Tomorrow combines Wells Gray, Mount Robson, Jasper country, and a one-hour clock change back to Mountain Time."
+                }
+              },
+              "explorer": {
+                "briefing": "Today starts with kangaroos, wallabies, capybaras, emus, and peacocks. Choose a favourite, learn one surprising fact, and then head toward waterfall country.",
+                "missions": [
+                  {
+                    "id": "exp-farm-hours",
+                    "label": "Arrive while Kangaroo Creek Farm is open from 9:00 AM to 3:00 PM",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-favourite-animal",
+                    "label": "Pick a favourite animal and explain why",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-animal-fact",
+                    "label": "Learn one animal fact you did not know before",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-four-species",
+                    "label": "Spot at least four different animal species",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-find-clearwater",
+                    "label": "Find Clearwater on the map before leaving the Okanagan",
+                    "audience": "explorer"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "exp-kangaroo",
+                    "label": "Kangaroo",
+                    "icon": "K",
+                    "target": 3
+                  },
+                  {
+                    "id": "exp-wallaby",
+                    "label": "Wallaby",
+                    "icon": "W",
+                    "target": 2
+                  },
+                  {
+                    "id": "exp-capybara",
+                    "label": "Capybara",
+                    "icon": "C",
+                    "target": 2
+                  },
+                  {
+                    "id": "exp-emu",
+                    "label": "Emu",
+                    "icon": "E",
+                    "target": 2
+                  },
+                  {
+                    "id": "exp-peacock",
+                    "label": "Peacock or peahen",
+                    "icon": "P",
+                    "target": 2
+                  },
+                  {
+                    "id": "exp-orchard-north",
+                    "label": "Orchard on the road north",
+                    "icon": "|||",
+                    "target": 3
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "More than kangaroos",
+                    "text": "The farm includes several kinds of animals, so the best discovery may not be the animal in its name.",
+                    "prompt": "Which animal surprised you most?"
+                  },
+                  {
+                    "title": "Capybara fact",
+                    "text": "Capybaras are the world’s largest living rodents and are strongly associated with water.",
+                    "prompt": "What did the capybaras spend most of their time doing?"
+                  }
+                ],
+                "photoMission": "Take a respectful close-up of your favourite animal.",
+                "badge": {
+                  "id": "animal-ambassador",
+                  "name": "Animal Ambassador",
+                  "icon": "◎",
+                  "description": "Met several species, learned something new, and chose a favourite animal."
+                },
+                "teaser": {
+                  "title": "Tomorrow: waterfalls, trains, mountains, and Alberta",
+                  "text": "Watch for spray, canyon walls, Mount Robson, wildlife, and the sign that brings the family back into Alberta."
+                }
+              }
             }
           }
         },
@@ -1529,6 +2979,190 @@ window.BOBSX4_DATA = {
             "teaser": {
               "title": "Tomorrow: the homeward record",
               "text": "The final drive reaches Berwyn. The last mission is to choose the trip’s best story and complete the scrapbook."
+            },
+            "modes": {
+              "navigator": {
+                "briefing": "Choose the waterfall stop carefully, account for the one-hour clock change, and monitor the long route through Mount Robson and Jasper country.",
+                "missions": [
+                  {
+                    "id": "nav-waterfall-choice",
+                    "label": "Choose the waterfall stop that best fits the day’s timing",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-departure-log",
+                    "label": "Record the actual Clearwater departure time",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-time-zone",
+                    "label": "Account for the one-hour change back to Mountain Time",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-robson-visibility",
+                    "label": "Record whether Mount Robson’s summit is visible",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-delay-cause",
+                    "label": "Identify the day’s largest delay before reaching Hinton",
+                    "audience": "navigator"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "nav-waterfall-sign",
+                    "label": "Waterfall viewpoint sign",
+                    "icon": "≈",
+                    "target": 2
+                  },
+                  {
+                    "id": "nav-freight-train",
+                    "label": "Long freight train",
+                    "icon": "↔",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-weather-change",
+                    "label": "Mountain weather change",
+                    "icon": "◒",
+                    "target": 2
+                  },
+                  {
+                    "id": "nav-robson-sign",
+                    "label": "Mount Robson sign",
+                    "icon": "△",
+                    "target": 1
+                  },
+                  {
+                    "id": "nav-safe-pullout",
+                    "label": "Safe wildlife pullout",
+                    "icon": "P",
+                    "target": 2
+                  },
+                  {
+                    "id": "nav-alberta-sign",
+                    "label": "Welcome to Alberta sign",
+                    "icon": "AB",
+                    "target": 1
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "Waterfall selection",
+                    "text": "Helmcken is the signature waterfall, while a shorter stop can protect the long drive. The correct choice depends on the real departure time.",
+                    "prompt": "Did the chosen waterfall justify the time it used?"
+                  },
+                  {
+                    "title": "A clock-hour disappears",
+                    "text": "Returning to Mountain Time makes the local clock jump one hour forward during the eastbound route.",
+                    "prompt": "How did the time change affect the Hinton arrival?"
+                  }
+                ],
+                "photoMission": "Use foreground, middle distance, and background in one waterfall or mountain landscape.",
+                "badge": {
+                  "id": "waterfall-surveyor",
+                  "name": "Waterfall Surveyor",
+                  "icon": "⌁",
+                  "description": "Balanced the waterfall stop, route timing, mountain observations, and time-zone change."
+                },
+                "teaser": {
+                  "title": "Final dispatch: turn kilometres into a trip record",
+                  "text": "Tomorrow is the homeward run. Collect everyone’s verdict and close the scrapbook properly."
+                }
+              },
+              "explorer": {
+                "briefing": "Today starts in waterfall country and ends back in Alberta. Watch for spray, trains, mountain peaks, wildlife, river canyons, and the welcome sign.",
+                "missions": [
+                  {
+                    "id": "exp-waterfall",
+                    "label": "See at least one Wells Gray waterfall",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-robson",
+                    "label": "Look for Mount Robson and decide whether the summit is visible",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-time-change",
+                    "label": "Notice the one-hour change back to Mountain Time",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-safe-wildlife",
+                    "label": "Model safe wildlife viewing without stopping in a traffic lane",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-best-mountain",
+                    "label": "Choose the best mountain view of the day",
+                    "audience": "explorer"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "exp-waterfall",
+                    "label": "Waterfall",
+                    "icon": "≈",
+                    "target": 2
+                  },
+                  {
+                    "id": "exp-train",
+                    "label": "Long freight train",
+                    "icon": "↔",
+                    "target": 3
+                  },
+                  {
+                    "id": "exp-elk",
+                    "label": "Elk",
+                    "icon": "E",
+                    "target": 1
+                  },
+                  {
+                    "id": "exp-canyon",
+                    "label": "River canyon",
+                    "icon": "V",
+                    "target": 2
+                  },
+                  {
+                    "id": "exp-mountain",
+                    "label": "Huge mountain peak",
+                    "icon": "△",
+                    "target": 3
+                  },
+                  {
+                    "id": "exp-alberta",
+                    "label": "Welcome to Alberta sign",
+                    "icon": "AB",
+                    "target": 1
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "Waterfall country",
+                    "text": "Wells Gray is known for dramatic waterfalls, volcanic landforms, rivers, and deep forest.",
+                    "prompt": "Which sound was stronger—the water, wind, or people at the viewpoint?"
+                  },
+                  {
+                    "title": "Mount Robson test",
+                    "text": "Cloud often hides part or all of Mount Robson, so seeing the full summit is never guaranteed.",
+                    "prompt": "How much of the mountain could you see today?"
+                  }
+                ],
+                "photoMission": "Take a photo that shows how small people or trees look beside a waterfall or mountain.",
+                "badge": {
+                  "id": "wild-country-spotter",
+                  "name": "Wild Country Spotter",
+                  "icon": "◎",
+                  "description": "Found the waterfalls, mountain country, wildlife, and the route back into Alberta."
+                },
+                "teaser": {
+                  "title": "Tomorrow: the victory lap home",
+                  "text": "Choose the final song, watch for the first familiar sign, and decide which story from the whole trip wins."
+                }
+              }
             }
           }
         },
@@ -1664,6 +3298,190 @@ window.BOBSX4_DATA = {
             "teaser": {
               "title": "Adventure complete",
               "text": "The itinerary is finished, but the badges, ratings, field notes, and scrapbook stay in Road Companion."
+            },
+            "modes": {
+              "navigator": {
+                "briefing": "Close the expedition properly: protect the arrival buffer, collect final verdicts, and turn the last kilometres into a useful record rather than dead time.",
+                "missions": [
+                  {
+                    "id": "nav-home-eta",
+                    "label": "Predict the home arrival time before leaving Hinton",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-family-verdicts",
+                    "label": "Ask each person for a one-sentence trip verdict",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-top-three-days",
+                    "label": "Rank the trip’s top three days and record why",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-next-time",
+                    "label": "Write one route or planning change for the next adventure",
+                    "audience": "navigator"
+                  },
+                  {
+                    "id": "nav-final-journal",
+                    "label": "Complete the final field note before the day ends",
+                    "audience": "navigator"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "nav-familiar-junction",
+                    "label": "Familiar highway junction",
+                    "icon": "Y",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-pumpjack",
+                    "label": "Pumpjack",
+                    "icon": "⌁",
+                    "target": 5
+                  },
+                  {
+                    "id": "nav-farm-machine",
+                    "label": "Large farm machine",
+                    "icon": "▤",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-peace-country",
+                    "label": "Peace Country sign or landmark",
+                    "icon": "N",
+                    "target": 2
+                  },
+                  {
+                    "id": "nav-known-turn",
+                    "label": "Turn someone recognizes",
+                    "icon": "↰",
+                    "target": 3
+                  },
+                  {
+                    "id": "nav-final-km",
+                    "label": "Final kilometre before home",
+                    "icon": "1",
+                    "target": 1
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "The debrief matters",
+                    "text": "A short note about what worked, what did not, and what the family would repeat is more useful than relying on memory before the next trip.",
+                    "prompt": "What single planning choice improved this adventure the most?"
+                  },
+                  {
+                    "title": "End with an image",
+                    "text": "The closing photograph should feel like an ending: arrival, luggage, a familiar view, or the family together.",
+                    "prompt": "What image best closes the story?"
+                  }
+                ],
+                "photoMission": "Create the closing image for the scrapbook—something that feels like an ending, not merely a driveway.",
+                "badge": {
+                  "id": "expedition-editor",
+                  "name": "Expedition Editor",
+                  "icon": "⌁",
+                  "description": "Collected the family verdicts and turned the completed route into a useful record."
+                },
+                "teaser": {
+                  "title": "Mission complete: preserve the field record",
+                  "text": "The route is finished. Review ratings, badges, observations, and notes while the details are still fresh."
+                }
+              },
+              "explorer": {
+                "briefing": "The final travel day is a victory lap. Watch familiar Alberta scenery return and help choose the trip’s funniest, wildest, and best moments.",
+                "missions": [
+                  {
+                    "id": "exp-final-song",
+                    "label": "Choose the final official road-trip song",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-best-moment",
+                    "label": "Name the trip’s single best moment",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-home-sign",
+                    "label": "Spot the first road sign that truly feels like home",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-home-photo",
+                    "label": "Take the official “we made it home” photo",
+                    "audience": "explorer"
+                  },
+                  {
+                    "id": "exp-final-journal",
+                    "label": "Complete the final journal before the day ends",
+                    "audience": "explorer"
+                  }
+                ],
+                "spotting": [
+                  {
+                    "id": "exp-pumpjack",
+                    "label": "Pumpjack",
+                    "icon": "⌁",
+                    "target": 5
+                  },
+                  {
+                    "id": "exp-farm-machine",
+                    "label": "Large farm machine",
+                    "icon": "▤",
+                    "target": 3
+                  },
+                  {
+                    "id": "exp-peace-country",
+                    "label": "Peace Country sign or landmark",
+                    "icon": "N",
+                    "target": 2
+                  },
+                  {
+                    "id": "exp-familiar-turn",
+                    "label": "A turn everyone recognizes",
+                    "icon": "↰",
+                    "target": 3
+                  },
+                  {
+                    "id": "exp-home",
+                    "label": "Home",
+                    "icon": "⌂",
+                    "target": 1
+                  },
+                  {
+                    "id": "exp-wave",
+                    "label": "Someone waving hello",
+                    "icon": "~",
+                    "target": 1
+                  }
+                ],
+                "facts": [
+                  {
+                    "title": "The useful final kilometre",
+                    "text": "The trip is not finished until the funniest moments, favourite food, best purchase, and top day are written down.",
+                    "prompt": "Which story will you tell first when someone asks about the trip?"
+                  },
+                  {
+                    "title": "Adventure becomes memory",
+                    "text": "The route disappears behind you, but ratings, photos, sightings, and quick notes can keep the details from blending together.",
+                    "prompt": "What is one tiny detail you do not want to forget?"
+                  }
+                ],
+                "photoMission": "Take the official “we made it home” photo.",
+                "badge": {
+                  "id": "homecoming-hero",
+                  "name": "Homecoming Hero",
+                  "icon": "◎",
+                  "description": "Finished the loop, chose the best memories, and brought the adventure home."
+                },
+                "teaser": {
+                  "title": "Adventure complete: open the scrapbook",
+                  "text": "The road trip is over, but the sightings, ratings, badges, and favourite moments are ready to look back on."
+                }
+              }
             }
           }
         }
@@ -2029,5 +3847,21 @@ window.BOBSX4_DATA = {
         }
       ]
     }
-  ]
+  ],
+  "experienceModes": {
+    "navigator": {
+      "name": "Navigator",
+      "icon": "⌁",
+      "role": "Co-pilot and field reporter",
+      "verbs": "PLAN · OBSERVE · REPORT",
+      "description": "Route decisions, timing, deeper context, photography, and field notes."
+    },
+    "explorer": {
+      "name": "Explorer",
+      "icon": "◎",
+      "role": "Spotter and adventure collector",
+      "verbs": "SPOT · TRY · COLLECT",
+      "description": "Visual missions, real-world spotting, quick facts, and favourite moments."
+    }
+  }
 };

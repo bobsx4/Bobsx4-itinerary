@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.3.0 RC2 — 2026-07-27
+
+### Added
+
+- Fully separate Navigator and Explorer content packs for all ten travel days.
+- Mode definitions with distinct role, icon, verbs, and visual language.
+- Navigator-specific assignments, route intelligence, Field Log observations, photo briefs, journal prompts, credentials, and next-dispatch teasers.
+- Explorer-specific missions, I-Spy Road Quest items, quick facts, photo challenges, journal prompts, badges, and tomorrow teasers.
+- Dynamic section labels, introductions, rating prompts, and mode-specific mobile ordering.
+- Mode-aware badge gallery, scrapbook labels, mission totals, and observation totals.
+
+### Changed
+
+- Explorer Road Quest now appears immediately after missions on mobile.
+- Navigator prioritizes assignments and route intelligence before the Field Log.
+- Profile cards and picker now explain what each experience actually does.
+- Adventure visuals now use indigo/navy for Navigator and teal/orange for Explorer.
+- Badge eligibility and metrics count only the active mode's visible assignments and observations.
+
+### Fixed
+
+- Resolved the RC1 issue where Navigator and Explorer appeared nearly identical.
+- Updated the offline cache and published-version metadata to RC2.
+
 ## v0.3.0 RC1 — 2026-07-27
 
 ### Added

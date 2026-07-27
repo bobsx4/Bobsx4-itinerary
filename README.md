@@ -1,34 +1,49 @@
 # Bobsx4 Road Companion
 
-**Release:** v0.3.0 RC1  
+**Release:** v0.3.0 RC2  
 **Build date:** July 27, 2026  
 **Hosting target:** GitHub Pages  
 **Runtime:** Static HTML, CSS, and JavaScript; no Flask server or backend required.
 
-Bobsx4 Road Companion is an offline-first family travel companion. It combines the adult itinerary and stay tools with a profile-based Adventure Mode, daily field journals, Road Quest counters, badges, and a post-trip scrapbook.
+Bobsx4 Road Companion is an offline-first family travel companion. It combines the adult itinerary and stay tools with profile-based Adventure experiences, daily journals, Road Quest counters, badges, and a post-trip scrapbook.
 
 ## Application areas
 
-- **Home — Mission Control:** dynamic departure/trip countdown, next day, readiness, quick actions, and active-profile progress.
-- **Trip:** itinerary, route overview, hotel details, shopping/packing/border lists, and one-tap map links.
-- **Adventure:** a profile-adapted current-day briefing, missions, field facts, photo mission, Road Quest counters, journal, badge, and the next-day teaser at the bottom.
-- **Memories:** profile-specific trip statistics, badge collection, and a day-by-day scrapbook.
-- **Settings:** local profile names and experience styles, install/update controls, official live checks, backup/restore, general notes, and local-data reset.
+- **Home — Mission Control:** dynamic countdown, next day, readiness, quick actions, and active-profile progress.
+- **Trip:** itinerary, route overview, hotel details, shopping/packing/border lists, and map links.
+- **Adventure:** current-day content tailored to the active Navigator or Explorer profile.
+- **Memories:** profile-specific statistics, badges, observations, ratings, and scrapbook entries.
+- **Settings:** local profile names and experience styles, update controls, official live checks, backup/restore, notes, and local-data reset.
 
-The hidden travel engine controls dates, current-day selection, itinerary data, hotel inheritance, map endpoints, local state, migrations, profiles, badges, and offline caching.
+## Navigator and Explorer are intentionally different
 
-## Profiles
+### Navigator
 
-The public source ships with neutral names:
+A co-pilot and field-reporter experience for an independent teen traveller:
 
-- **Navigator:** independent tone, deeper prompts, route tasks, photography, and reflection.
-- **Explorer:** more visual/direct prompts, spotting, and straightforward reflections.
+- timing and route decisions;
+- deeper route context;
+- operational observations;
+- deliberate photography;
+- field notes and future-trip advice;
+- Navigator credentials and dispatch-style teasers.
 
-Rename either profile locally in Settings. Names, journals, tallies, confirmation numbers, and notes are stored in that device's browser and are not published to GitHub.
+### Explorer
 
-## Current adventure
+A visual adventure experience:
 
-The included adventure is **Northwest Adventure 2026**, July 30–August 8:
+- direct missions;
+- I-Spy Road Quest counters;
+- animals, scenery, rides, signs, shops, ferries, and landmarks;
+- quick facts and photo challenges;
+- favourite moments, food, purchases, surprises, and memories;
+- Explorer badges and next-day teasers.
+
+Rename either profile locally in Settings. Names, journals, tallies, confirmation numbers, and notes remain on that device and are not published to GitHub.
+
+## Current Adventure
+
+**Northwest Adventure 2026**, July 30–August 8:
 
 1. Edmonton → Lethbridge
 2. Glacier National Park → Kalispell
@@ -43,31 +58,19 @@ The included adventure is **Northwest Adventure 2026**, July 30–August 8:
 
 ## Privacy and sharing
 
-The GitHub Pages site is public, but personal entries are local to each browser profile. Sharing the site URL gives each family member the same app and itinerary, but **not** the same journals or progress. Each device develops its own Adventure profile history.
+The public site contains only the app and public itinerary. Each phone or iPad keeps its own journals, badges, sightings, checklist state, hotel confirmations, and notes. Sharing the URL gives family members the same app but not the same local progress.
 
-Use **Settings → Export backup** to create a JSON copy of local data. A backup can be moved to another device and restored there, but RC1 does not merge two people's entries.
-
-## Local testing
-
-Run a local static server from the repository root:
-
-- Windows: `start-local.bat`
-- macOS/Linux: `./start-local.sh`
-
-Then open `http://localhost:8080/`.
-
-Opening `index.html` directly from Files is not a complete PWA test because service workers require an HTTP/HTTPS origin.
+Use **Settings → Export backup** before major updates or device cleanup.
 
 ## Updating GitHub Pages
 
-See `WORKING_COPY_UPDATE.md`. Working Copy preserves conflicting filenames by adding suffixes, so existing root app files and numbered duplicates must be removed before importing a release.
+- Computer/browser workflow: see `GITHUB_BROWSER_UPDATE.md`.
+- iPhone/iPad Working Copy workflow: see `WORKING_COPY_UPDATE.md`.
 
-## Important limits in RC1
+## Current limits
 
-- Progress and journals do not synchronize automatically across family devices.
-- The photo mission records completion but does not store the actual image.
-- Distances are planned values in the adventure data; hotel addresses improve map endpoints but do not yet recalculate the displayed kilometre/time estimates.
-- Live weather, live traffic, ferry queues, border waits, and fuel prices are links/placeholders rather than embedded feeds.
-- Only one Adventure is included in the UI, although the data model supports an array of Adventures.
-
-See `KNOWN_ISSUES.md`, `TESTING_CHECKLIST.md`, and `RELEASE_NOTES.md` for more detail.
+- No automatic family-device synchronization.
+- Photo missions store completion, not the image.
+- Displayed kilometres and drive times are planned values and do not yet recalculate from hotel changes.
+- Weather, traffic, ferry queues, border waits, and fuel prices remain links rather than embedded feeds.
+- One Adventure is visible in the UI, although the data model supports multiple Adventures.

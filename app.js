@@ -234,6 +234,87 @@
     return state.profiles[state.activeProfileId] || state.profiles[DATA.defaultProfiles[0].id];
   }
 
+  function experienceDefinition(profile = getProfile()) {
+    const experience = profile?.experience === "explorer" ? "explorer" : "navigator";
+    return DATA.experienceModes?.[experience] || {
+      name: experience === "explorer" ? "Explorer" : "Navigator",
+      icon: experience === "explorer" ? "◎" : "⌁",
+      role: experience === "explorer" ? "Spotter and adventure collector" : "Co-pilot and field reporter",
+      verbs: experience === "explorer" ? "SPOT · TRY · COLLECT" : "PLAN · OBSERVE · REPORT",
+      description: "A personalised Adventure Mode experience."
+    };
+  }
+
+  function experienceContent(day, profile = getProfile()) {
+    const experience = profile?.experience === "explorer" ? "explorer" : "navigator";
+    const base = day?.adventure || {};
+    const mode = base.modes?.[experience] || {};
+    const legacyMissions = (base.missions || []).filter((mission) => mission.audience === "all" || mission.audience === experience);
+    const legacyPhoto = typeof base.photoMission === "string" ? base.photoMission : base.photoMission?.[experience];
+    return {
+      experience,
+      definition: experienceDefinition(profile),
+      briefing: mode.briefing || base.briefing?.[experience] || base.briefing?.navigator || day?.summary || "",
+      missions: Array.isArray(mode.missions) ? mode.missions : legacyMissions,
+      spotting: Array.isArray(mode.spotting) ? mode.spotting : (base.spotting || []),
+      facts: Array.isArray(mode.facts) ? mode.facts : (base.facts || []),
+      photoMission: mode.photoMission || legacyPhoto || "Capture one image that helps tell the story of the day.",
+      badge: mode.badge || base.badge || null,
+      teaser: mode.teaser || base.teaser || { title: "Tomorrow", text: "Another travel day is waiting." }
+    };
+  }
+
+  function experienceLabels(experience) {
+    if (experience === "explorer") {
+      return {
+        briefingTitle: "Today’s adventure",
+        missionsKicker: "Get involved",
+        missionsTitle: "Today’s missions",
+        missionsIntro: "Quick challenges that turn the drive into part of the adventure.",
+        factsKicker: "Discover",
+        factsTitle: "Cool things to know",
+        factsIntro: "Short facts and questions connected to what is outside the window.",
+        photoKicker: "Capture it",
+        photoTitle: "Photo challenge",
+        photoIntro: "One picture that tells today’s story.",
+        photoComplete: "Photo challenge completed",
+        roadKicker: "I Spy",
+        roadTitle: "Road Quest",
+        roadIntro: "Count the real things you spot today.",
+        roadNote: "Honor system: only count what you really see. Tricky finds deserve a second-person check.",
+        journalKicker: "Remember it",
+        journalTitle: "My day",
+        journalIntro: "Fast answers now make much better memories later.",
+        ratingPrompt: "How good was today?",
+        badgeKicker: "Adventure badge",
+        badgeClaimed: "Badge added to Memories"
+      };
+    }
+    return {
+      briefingTitle: "Navigator briefing",
+      missionsKicker: "Co-pilot duties",
+      missionsTitle: "Navigator assignments",
+      missionsIntro: "Timing, route judgement, and useful observations—not busywork.",
+      factsKicker: "Route intelligence",
+      factsTitle: "What matters today",
+      factsIntro: "Context that helps explain the route, decisions, and landscape.",
+      photoKicker: "Document the route",
+      photoTitle: "Photo brief",
+      photoIntro: "Create one deliberate image for the final travel record.",
+      photoComplete: "Photo brief completed",
+      roadKicker: "Observe and verify",
+      roadTitle: "Field log",
+      roadIntro: "Track useful route evidence and patterns rather than random objects.",
+      roadNote: "Log confirmed observations only. Accuracy matters more than a high count.",
+      journalKicker: "Debrief",
+      journalTitle: "Field notes",
+      journalIntro: "Record what worked, what changed, and what future-you should know.",
+      ratingPrompt: "How strong was today’s route and experience?",
+      badgeKicker: "Navigator credential",
+      badgeClaimed: "Credential added to Memories"
+    };
+  }
+
   function ensureProfileProgress(profileId = state.activeProfileId) {
     const adventureState = getAdventureState();
     if (!adventureState.profileProgress[profileId]) adventureState.profileProgress[profileId] = makeProfileProgress();
@@ -465,6 +546,10 @@
 
   function renderHeader() {
     const profile = getProfile();
+    const mode = experienceDefinition(profile);
+    document.body.dataset.experience = profile.experience;
+    $("#view-adventure").dataset.experience = profile.experience;
+    $("#profile-button").dataset.experience = profile.experience;
     $("#header-version").textContent = APP.version;
     $("#app-version").textContent = APP.version;
     $("#build-date").textContent = APP.buildDate;
@@ -472,6 +557,7 @@
     $("#profile-initials").textContent = (profile.name || profile.initials || "?").trim().slice(0, 1).toUpperCase();
     $("#profile-initials").style.background = profile.experience === "explorer" ? "var(--teal-soft)" : "var(--indigo-soft)";
     $("#profile-initials").style.color = profile.experience === "explorer" ? "var(--teal)" : "var(--indigo)";
+    $("#profile-button").setAttribute("aria-label", `${profile.name}, ${mode.name} mode. Choose Adventure profile`);
   }
 
   function renderHome() {
@@ -542,6 +628,7 @@
   function profileMetrics(profileId = state.activeProfileId) {
     const adventure = getAdventure();
     const profileProgress = ensureProfileProgress(profileId);
+    const profile = state.profiles[profileId] || getProfile();
     let sightings = 0;
     let missions = 0;
     let journals = 0;
@@ -549,8 +636,9 @@
     let dayBadges = 0;
     adventure.days.forEach((day) => {
       const progress = getDayProgress(day.id, profileId, false);
-      sightings += Object.values(progress.sightings || {}).reduce((sum, value) => sum + Math.max(0, Number(value) || 0), 0);
-      missions += Object.values(progress.missions || {}).filter(Boolean).length;
+      const content = experienceContent(day, profile);
+      sightings += totalSightings(progress, content.spotting);
+      missions += content.missions.filter((mission) => Boolean(progress.missions?.[mission.id])).length;
       if (journalHasContent(progress.journal)) journals += 1;
       if (Number(progress.journal.rating) > 0) ratings += 1;
       if (progress.badgeClaimed) dayBadges += 1;
@@ -727,11 +815,40 @@
   }
 
   function visibleMissions(day, profile = getProfile()) {
-    return (day.adventure?.missions || []).filter((mission) => mission.audience === "all" || mission.audience === profile.experience);
+    return experienceContent(day, profile).missions;
   }
 
-  function totalSightings(progress) {
+  function visibleSpotting(day, profile = getProfile()) {
+    return experienceContent(day, profile).spotting;
+  }
+
+  function totalSightings(progress, spotting = null) {
+    if (Array.isArray(spotting)) {
+      return spotting.reduce((sum, spot) => sum + Math.max(0, Number(progress.sightings?.[spot.id]) || 0), 0);
+    }
     return Object.values(progress.sightings || {}).reduce((sum, value) => sum + Math.max(0, Number(value) || 0), 0);
+  }
+
+  function arrangeAdventureLayout(experience) {
+    const left = $("#adventure-left-column");
+    const right = $("#adventure-right-column");
+    const cards = {
+      missions: $("#missions-card"),
+      facts: $("#facts-card"),
+      photo: $("#photo-mission-card"),
+      road: $("#road-quest-card"),
+      journal: $("#journal-card"),
+      badge: $("#day-badge-card")
+    };
+    if (!left || !right || Object.values(cards).some((card) => !card)) return;
+    const leftOrder = experience === "explorer"
+      ? [cards.missions, cards.road, cards.photo]
+      : [cards.missions, cards.facts, cards.photo];
+    const rightOrder = experience === "explorer"
+      ? [cards.facts, cards.journal, cards.badge]
+      : [cards.road, cards.journal, cards.badge];
+    leftOrder.forEach((card) => left.appendChild(card));
+    rightOrder.forEach((card) => right.appendChild(card));
   }
 
   function journalHasContent(journal) {
@@ -743,43 +860,68 @@
     const day = getSelectedAdventureDay();
     const profile = getProfile();
     const progress = getDayProgress(day.id);
-    const content = day.adventure || {};
-    $("#adventure-profile-label").textContent = `${profile.name} · ${profile.experience === "navigator" ? "Navigator" : "Explorer"}`;
+    const content = experienceContent(day, profile);
+    const labels = experienceLabels(content.experience);
+    const mode = content.definition;
+
+    $("#view-adventure").dataset.experience = content.experience;
+    arrangeAdventureLayout(content.experience);
+    $("#adventure-profile-label").textContent = `${profile.name} · ${mode.name} · ${mode.role}`;
     $("#adventure-title").textContent = day.title;
     $("#adventure-date-line").textContent = `${formatDate(day.date)} · ${day.distanceKm} km · ${day.driveTime}`;
     renderAdventureDayStrip(day.id);
 
-    const briefing = content.briefing?.[profile.experience] || content.briefing?.navigator || day.summary;
-    $("#mission-briefing").innerHTML = `<span class="brief-date">${escapeHtml(day.shortDate)} · ${escapeHtml(day.start)} to ${escapeHtml(day.end)}</span><h2>Mission briefing</h2><p>${escapeHtml(briefing)}</p><div class="mission-route"><span>${escapeHtml(day.distanceKm)} km planned</span><span>${escapeHtml(day.driveTime)}</span><span>Night: ${escapeHtml(day.overnight)}</span></div>`;
+    $("#mission-briefing").className = `mission-briefing mode-${content.experience}`;
+    $("#mission-briefing").innerHTML = `<div class="brief-mode-row"><span class="brief-mode-icon">${escapeHtml(mode.icon)}</span><span><strong>${escapeHtml(mode.name)} mode</strong><small>${escapeHtml(mode.verbs)}</small></span></div><span class="brief-date">${escapeHtml(day.shortDate)} · ${escapeHtml(day.start)} to ${escapeHtml(day.end)}</span><h2 id="mission-briefing-title">${escapeHtml(labels.briefingTitle)}</h2><p>${escapeHtml(content.briefing)}</p><div class="mission-route"><span>${escapeHtml(day.distanceKm)} km planned</span><span>${escapeHtml(day.driveTime)}</span><span>Night: ${escapeHtml(day.overnight)}</span></div>`;
 
-    const missions = visibleMissions(day, profile);
+    $("#missions-kicker").textContent = labels.missionsKicker;
+    $("#missions-title").textContent = labels.missionsTitle;
+    $("#missions-intro").textContent = labels.missionsIntro;
+    $("#facts-kicker").textContent = labels.factsKicker;
+    $("#facts-title").textContent = labels.factsTitle;
+    $("#facts-intro").textContent = labels.factsIntro;
+    $("#photo-kicker").textContent = labels.photoKicker;
+    $("#photo-mission-title").textContent = labels.photoTitle;
+    $("#photo-intro").textContent = labels.photoIntro;
+    $("#photo-completion-label").textContent = labels.photoComplete;
+    $("#road-quest-kicker").textContent = labels.roadKicker;
+    $("#road-quest-title").textContent = labels.roadTitle;
+    $("#road-quest-intro").textContent = labels.roadIntro;
+    $("#road-quest-note").textContent = labels.roadNote;
+    $("#journal-kicker").textContent = labels.journalKicker;
+    $("#journal-title").textContent = labels.journalTitle;
+    $("#journal-intro").textContent = labels.journalIntro;
+    $("#rating-prompt").textContent = labels.ratingPrompt;
+
+    const missions = content.missions;
     const completeMissions = missions.filter((mission) => progress.missions[mission.id]).length;
     const missionPercent = missions.length ? Math.round((completeMissions / missions.length) * 100) : 0;
     $("#mission-progress-label").textContent = `${completeMissions}/${missions.length}`;
     $("#mission-progress-bar").style.width = `${missionPercent}%`;
-    $("#mission-list").innerHTML = missions.map((mission) => {
+    $("#mission-list").innerHTML = missions.map((mission, index) => {
       const complete = Boolean(progress.missions[mission.id]);
-      return `<label class="mission-item ${complete ? "complete" : ""}"><input type="checkbox" data-mission-id="${escapeHtml(mission.id)}" ${complete ? "checked" : ""}><span>${escapeHtml(mission.label)}</span></label>`;
+      return `<label class="mission-item ${complete ? "complete" : ""}"><input type="checkbox" data-mission-id="${escapeHtml(mission.id)}" ${complete ? "checked" : ""}><span class="mission-sequence" aria-hidden="true">${index + 1}</span><span class="mission-copy">${escapeHtml(mission.label)}</span></label>`;
     }).join("");
 
-    $("#fact-list").innerHTML = (content.facts || []).map((fact) => `<article class="fact-card"><h3>${escapeHtml(fact.title)}</h3><p>${escapeHtml(fact.text)}</p>${fact.prompt ? `<span class="fact-prompt">Think about it: ${escapeHtml(fact.prompt)}</span>` : ""}${fact.sourceUrl ? `<a class="fact-source" href="${escapeHtml(fact.sourceUrl)}" target="_blank" rel="noopener">Source: ${escapeHtml(fact.sourceLabel || "Official information")}</a>` : ""}</article>`).join("") || `<p class="supporting-copy">No field notes for this day yet.</p>`;
+    $("#fact-list").innerHTML = content.facts.map((fact) => `<article class="fact-card"><h3>${escapeHtml(fact.title)}</h3><p>${escapeHtml(fact.text)}</p>${fact.prompt ? `<span class="fact-prompt">${content.experience === "navigator" ? "Consider" : "Try this"}: ${escapeHtml(fact.prompt)}</span>` : ""}${fact.sourceUrl ? `<a class="fact-source" href="${escapeHtml(fact.sourceUrl)}" target="_blank" rel="noopener">Source: ${escapeHtml(fact.sourceLabel || "Official information")}</a>` : ""}</article>`).join("") || `<p class="supporting-copy">No field notes for this day yet.</p>`;
 
-    $("#photo-mission-text").textContent = content.photoMission?.[profile.experience] || content.photoMission?.navigator || "Capture one image that helps tell the story of the day.";
+    $("#photo-mission-text").textContent = content.photoMission;
     $("#photo-mission-check").checked = Boolean(progress.photoDone);
 
-    const sightings = content.spotting || [];
-    const sightTotal = totalSightings(progress);
-    $("#sighting-total").textContent = `${sightTotal} find${sightTotal === 1 ? "" : "s"}`;
+    const sightings = content.spotting;
+    const sightTotal = totalSightings(progress, sightings);
+    $("#sighting-total").textContent = `${sightTotal} ${content.experience === "navigator" ? "logged" : `find${sightTotal === 1 ? "" : "s"}`}`;
     $("#spotting-grid").innerHTML = sightings.map((spot) => {
       const count = Math.max(0, Number(progress.sightings[spot.id]) || 0);
-      return `<article class="spot-card"><div class="spot-card-head"><span class="spot-icon">${escapeHtml(spot.icon)}</span><span class="spot-label"><strong>${escapeHtml(spot.label)}</strong><span>${spot.target ? `Quest target ${escapeHtml(spot.target)}` : "Count each real sighting"}</span></span></div><div class="counter-control"><button type="button" data-action="decrement-sighting" data-spot-id="${escapeHtml(spot.id)}" aria-label="Subtract ${escapeHtml(spot.label)}">−</button><span class="counter-value">${count}</span><button type="button" data-action="increment-sighting" data-spot-id="${escapeHtml(spot.id)}" aria-label="Add ${escapeHtml(spot.label)}">+</button></div></article>`;
+      const targetText = spot.target ? `${content.experience === "navigator" ? "Field target" : "Quest target"} ${escapeHtml(spot.target)}` : (content.experience === "navigator" ? "Log each confirmed observation" : "Count each real sighting");
+      return `<article class="spot-card"><div class="spot-card-head"><span class="spot-icon">${escapeHtml(spot.icon)}</span><span class="spot-label"><strong>${escapeHtml(spot.label)}</strong><span>${targetText}</span></span></div><div class="counter-control"><button type="button" data-action="decrement-sighting" data-spot-id="${escapeHtml(spot.id)}" aria-label="Subtract ${escapeHtml(spot.label)}">−</button><span class="counter-value">${count}</span><button type="button" data-action="increment-sighting" data-spot-id="${escapeHtml(spot.id)}" aria-label="Add ${escapeHtml(spot.label)}">+</button></div></article>`;
     }).join("");
 
     renderRating(progress.journal.rating);
-    renderJournalFields(progress.journal, profile.experience);
-    renderDayBadge(day, progress, missions);
-    const teaser = content.teaser || { title: "Tomorrow", text: "Another travel day is waiting." };
-    $("#tomorrow-teaser").innerHTML = `<span class="section-kicker">Last look ahead</span><h2 id="tomorrow-teaser-title">${escapeHtml(teaser.title)}</h2><p>${escapeHtml(teaser.text)}</p>`;
+    renderJournalFields(progress.journal, content.experience);
+    renderDayBadge(day, progress, missions, sightings);
+    $("#tomorrow-teaser").className = `tomorrow-teaser mode-${content.experience}`;
+    $("#tomorrow-teaser").innerHTML = `<span class="section-kicker">${content.experience === "navigator" ? "Next dispatch" : "Last look ahead"}</span><h2 id="tomorrow-teaser-title">${escapeHtml(content.teaser.title)}</h2><p>${escapeHtml(content.teaser.text)}</p>`;
   }
 
   function renderAdventureDayStrip(selectedId) {
@@ -800,19 +942,19 @@
   function journalLabels(experience) {
     if (experience === "explorer") {
       return {
-        favorite: "Favourite part of the day",
-        ate: "Best thing I ate",
-        bought: "What I bought or collected",
-        surprise: "Funniest or most surprising thing",
-        note: "One more thing I want to remember"
+        favorite: { label: "Favourite part of the day", placeholder: "The ride, view, animal, joke, stop..." },
+        ate: { label: "Best thing I ate", placeholder: "Meal, snack, dessert, weird road food..." },
+        bought: { label: "What I bought or collected", placeholder: "Souvenir, clothes, snack, ticket, free find..." },
+        surprise: { label: "Funniest or most surprising thing", placeholder: "What made everyone laugh or caught you off guard?" },
+        note: { label: "One more thing I want to remember", placeholder: "A tiny detail future-you might otherwise forget..." }
       };
     }
     return {
-      favorite: "Best moment",
-      ate: "Food stop worth remembering",
-      bought: "What I picked up",
-      surprise: "What surprised me",
-      note: "Field note for future me"
+      favorite: { label: "Best decision or moment", placeholder: "What most improved the day?" },
+      ate: { label: "Food-stop verdict", placeholder: "Where, what, and was it worth repeating?" },
+      bought: { label: "Purchase worth remembering", placeholder: "What did you pick up, and was it worth it?" },
+      surprise: { label: "What changed from the plan?", placeholder: "Delay, discovery, better route, unexpected stop..." },
+      note: { label: "Field note for future me", placeholder: "What should you remember before doing a trip like this again?" }
     };
   }
 
@@ -821,13 +963,14 @@
     $("#journal-fields").innerHTML = JOURNAL_FIELDS.map((field) => {
       const multiline = field === "note" || field === "surprise";
       const value = escapeHtml(journal[field] || "");
-      return `<label>${escapeHtml(labels[field])}${multiline ? `<textarea rows="${field === "note" ? 4 : 3}" maxlength="600" data-journal-field="${field}">${value}</textarea>` : `<input type="text" maxlength="180" value="${value}" data-journal-field="${field}">`}</label>`;
+      const prompt = labels[field];
+      return `<label>${escapeHtml(prompt.label)}${multiline ? `<textarea rows="${field === "note" ? 4 : 3}" maxlength="600" placeholder="${escapeHtml(prompt.placeholder)}" data-journal-field="${field}">${value}</textarea>` : `<input type="text" maxlength="180" value="${value}" placeholder="${escapeHtml(prompt.placeholder)}" data-journal-field="${field}">`}</label>`;
     }).join("");
   }
 
-  function badgeEligibility(day, progress, missions) {
+  function badgeEligibility(day, progress, missions, spotting = visibleSpotting(day)) {
     const completeMissions = missions.filter((mission) => progress.missions[mission.id]).length;
-    const sightings = totalSightings(progress);
+    const sightings = totalSightings(progress, spotting);
     const rating = Number(progress.journal.rating) || 0;
     const favorite = Boolean(String(progress.journal.favorite || "").trim());
     return {
@@ -839,16 +982,19 @@
     };
   }
 
-  function renderDayBadge(day, progress, missions) {
-    const badge = day.adventure?.badge;
+  function renderDayBadge(day, progress, missions = visibleMissions(day), spotting = visibleSpotting(day)) {
+    const content = experienceContent(day);
+    const badge = content.badge;
+    const labels = experienceLabels(content.experience);
     if (!badge) {
       $("#day-badge-card").innerHTML = `<p>No day badge is defined yet.</p>`;
       return;
     }
-    const eligibility = badgeEligibility(day, progress, missions);
+    const eligibility = badgeEligibility(day, progress, missions, spotting);
+    $("#day-badge-card").dataset.experience = content.experience;
     $("#day-badge-card").innerHTML = `
-      <div class="badge-layout"><span class="badge-symbol">${escapeHtml(badge.icon)}</span><div><span class="section-kicker">Day badge</span><h2 id="day-badge-title">${escapeHtml(badge.name)}</h2><p>${escapeHtml(badge.description)}</p></div></div>
-      <div class="badge-state">${progress.badgeClaimed ? `<div class="badge-earned">✓ Badge added to Memories</div>` : `<p class="fine-print">Unlock with at least ${Math.min(2, missions.length)} missions, 3 real sightings, a day rating, and a favourite/best moment.</p><button class="primary-button" type="button" data-action="claim-day-badge" ${eligibility.eligible ? "" : "disabled"}>${eligibility.eligible ? "Claim badge" : "Badge not ready"}</button>`}</div>`;
+      <div class="badge-layout"><span class="badge-symbol">${escapeHtml(badge.icon)}</span><div><span class="section-kicker">${escapeHtml(labels.badgeKicker)}</span><h2 id="day-badge-title">${escapeHtml(badge.name)}</h2><p>${escapeHtml(badge.description)}</p></div></div>
+      <div class="badge-state">${progress.badgeClaimed ? `<div class="badge-earned">✓ ${escapeHtml(labels.badgeClaimed)}</div>` : `<p class="fine-print">Unlock with at least ${Math.min(2, missions.length)} assignments, 3 real observations, a day rating, and a best/favourite moment.</p><button class="primary-button" type="button" data-action="claim-day-badge" ${eligibility.eligible ? "" : "disabled"}>${eligibility.eligible ? "Claim badge" : "Badge not ready"}</button>`}</div>`;
   }
 
   function dayHasMemory(progress) {
@@ -862,15 +1008,15 @@
     const global = earnedGlobalBadges();
     const average = metrics.ratings ? (adventure.days.reduce((sum, day) => sum + (Number(getDayProgress(day.id, state.activeProfileId, false).journal.rating) || 0), 0) / metrics.ratings).toFixed(1) : "—";
     $("#memory-stats").innerHTML = [
-      { value: metrics.sightings, label: "sightings" },
-      { value: metrics.journals, label: "journal days" },
+      { value: metrics.sightings, label: profile.experience === "navigator" ? "observations" : "sightings" },
+      { value: metrics.journals, label: profile.experience === "navigator" ? "field-note days" : "journal days" },
       { value: metrics.dayBadges + global.length, label: "badges" },
       { value: average, label: "average rating" }
     ].map((stat) => `<div class="memory-stat"><strong>${escapeHtml(stat.value)}</strong><span>${escapeHtml(stat.label)}</span></div>`).join("");
 
-    const dayBadges = adventure.days.map((day) => ({ ...day.adventure.badge, earned: getDayProgress(day.id, state.activeProfileId, false).badgeClaimed, source: day.shortDate }));
+    const dayBadges = adventure.days.map((day) => ({ ...experienceContent(day, profile).badge, earned: getDayProgress(day.id, state.activeProfileId, false).badgeClaimed, source: day.shortDate }));
     const globalBadges = DATA.globalBadges.map((badge) => ({ ...badge, earned: global.some((item) => item.id === badge.id), source: "Adventure" }));
-    $("#badge-gallery").innerHTML = [...dayBadges, ...globalBadges].map((badge) => `<article class="badge-card ${badge.earned ? "" : "locked"}"><span class="badge-symbol">${escapeHtml(badge.icon)}</span><strong>${escapeHtml(badge.name)}</strong><p>${escapeHtml(badge.description)}</p><small>${badge.earned ? `Earned · ${escapeHtml(badge.source)}` : "Locked"}</small></article>`).join("");
+    $("#badge-gallery").innerHTML = [...dayBadges, ...globalBadges].filter((badge) => badge && badge.id).map((badge) => `<article class="badge-card ${badge.earned ? "" : "locked"}"><span class="badge-symbol">${escapeHtml(badge.icon)}</span><strong>${escapeHtml(badge.name)}</strong><p>${escapeHtml(badge.description)}</p><small>${badge.earned ? `Earned · ${escapeHtml(badge.source)}` : "Locked"}</small></article>`).join("");
 
     $("#scrapbook-list").innerHTML = adventure.days.map((day) => renderScrapbookCard(day, getDayProgress(day.id, state.activeProfileId, false), profile)).join("");
   }
@@ -879,10 +1025,12 @@
     const parts = dateParts(day.date);
     const journal = progress.journal || emptyDayProgress().journal;
     const labels = journalLabels(profile.experience);
+    const content = experienceContent(day, profile);
     const hasMemory = dayHasMemory(progress);
-    const spots = (day.adventure?.spotting || []).map((spot) => ({ label: spot.label, count: Number(progress.sightings[spot.id]) || 0 })).filter((spot) => spot.count > 0);
+    const spots = content.spotting.map((spot) => ({ label: spot.label, count: Number(progress.sightings[spot.id]) || 0 })).filter((spot) => spot.count > 0);
     const rating = Math.max(0, Math.min(5, Number(journal.rating) || 0));
-    return `<article class="scrapbook-card"><div class="scrapbook-head"><span class="day-date-tile"><span>${escapeHtml(parts.month)}</span><strong>${escapeHtml(parts.day)}</strong></span><div><h3>${escapeHtml(day.title)}</h3><p>${escapeHtml(day.start)} → ${escapeHtml(day.end)}</p></div><span class="scrapbook-rating">${rating ? "★".repeat(rating) : ""}</span></div><div class="scrapbook-body">${hasMemory ? `${journal.favorite ? `<div class="memory-line"><strong>${escapeHtml(labels.favorite)}</strong><span>${escapeHtml(journal.favorite)}</span></div>` : ""}${journal.ate ? `<div class="memory-line"><strong>${escapeHtml(labels.ate)}</strong><span>${escapeHtml(journal.ate)}</span></div>` : ""}${journal.bought ? `<div class="memory-line"><strong>${escapeHtml(labels.bought)}</strong><span>${escapeHtml(journal.bought)}</span></div>` : ""}${journal.surprise ? `<div class="memory-line"><strong>${escapeHtml(labels.surprise)}</strong><span>${escapeHtml(journal.surprise)}</span></div>` : ""}${journal.note ? `<div class="memory-line"><strong>${escapeHtml(labels.note)}</strong><span>${escapeHtml(journal.note)}</span></div>` : ""}${spots.length ? `<div class="sighting-summary">${spots.map((spot) => `<span class="sighting-chip">${escapeHtml(spot.label)} × ${spot.count}</span>`).join("")}</div>` : ""}${progress.photoDone ? `<span class="sighting-chip">Photo mission complete</span>` : ""}${progress.badgeClaimed ? `<span class="sighting-chip">Badge: ${escapeHtml(day.adventure.badge.name)}</span>` : ""}` : `<p class="empty-memory">No entry yet. Open this day in Adventure Mode to add field notes.</p>`}</div></article>`;
+    const labelText = (field) => labels[field]?.label || field;
+    return `<article class="scrapbook-card"><div class="scrapbook-head"><span class="day-date-tile"><span>${escapeHtml(parts.month)}</span><strong>${escapeHtml(parts.day)}</strong></span><div><h3>${escapeHtml(day.title)}</h3><p>${escapeHtml(day.start)} → ${escapeHtml(day.end)}</p></div><span class="scrapbook-rating">${rating ? "★".repeat(rating) : ""}</span></div><div class="scrapbook-body">${hasMemory ? `${journal.favorite ? `<div class="memory-line"><strong>${escapeHtml(labelText("favorite"))}</strong><span>${escapeHtml(journal.favorite)}</span></div>` : ""}${journal.ate ? `<div class="memory-line"><strong>${escapeHtml(labelText("ate"))}</strong><span>${escapeHtml(journal.ate)}</span></div>` : ""}${journal.bought ? `<div class="memory-line"><strong>${escapeHtml(labelText("bought"))}</strong><span>${escapeHtml(journal.bought)}</span></div>` : ""}${journal.surprise ? `<div class="memory-line"><strong>${escapeHtml(labelText("surprise"))}</strong><span>${escapeHtml(journal.surprise)}</span></div>` : ""}${journal.note ? `<div class="memory-line"><strong>${escapeHtml(labelText("note"))}</strong><span>${escapeHtml(journal.note)}</span></div>` : ""}${spots.length ? `<div class="sighting-summary">${spots.map((spot) => `<span class="sighting-chip">${escapeHtml(spot.label)} × ${spot.count}</span>`).join("")}</div>` : ""}${progress.photoDone ? `<span class="sighting-chip">${profile.experience === "navigator" ? "Photo brief" : "Photo challenge"} complete</span>` : ""}${progress.badgeClaimed && content.badge ? `<span class="sighting-chip">Badge: ${escapeHtml(content.badge.name)}</span>` : ""}` : `<p class="empty-memory">No entry yet. Open this day in Adventure Mode to add ${profile.experience === "navigator" ? "field notes" : "memories"}.</p>`}</div></article>`;
   }
 
   function renderSettings() {
@@ -894,9 +1042,12 @@
 
   function renderProfiles() {
     const profiles = Object.values(state.profiles);
-    const card = (profile, picker = false) => picker
-      ? `<button class="profile-pick-button" type="button" data-action="select-profile" data-profile-id="${escapeHtml(profile.id)}"><span class="profile-avatar">${escapeHtml((profile.name || "?").slice(0,1).toUpperCase())}</span><span><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(profile.experience === "navigator" ? "Independent prompts, route tasks, and photography" : "Visual prompts, spotting, and direct missions")}</span></span></button>`
-      : `<article class="profile-card ${profile.id === state.activeProfileId ? "active" : ""}" data-experience="${escapeHtml(profile.experience)}"><span class="profile-avatar">${escapeHtml((profile.name || "?").slice(0,1).toUpperCase())}</span><div><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(profile.experience === "navigator" ? "Navigator experience" : "Explorer experience")}</span></div><div class="profile-card-actions"><button type="button" data-action="select-profile" data-profile-id="${escapeHtml(profile.id)}">Use</button><button type="button" data-action="edit-profile" data-profile-id="${escapeHtml(profile.id)}">Edit</button></div></article>`;
+    const card = (profile, picker = false) => {
+      const mode = experienceDefinition(profile);
+      return picker
+        ? `<button class="profile-pick-button" type="button" data-action="select-profile" data-profile-id="${escapeHtml(profile.id)}"><span class="profile-avatar">${escapeHtml((profile.name || "?").slice(0,1).toUpperCase())}</span><span><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(`${mode.name}: ${mode.role}`)}</span><small>${escapeHtml(mode.description)}</small></span></button>`
+        : `<article class="profile-card ${profile.id === state.activeProfileId ? "active" : ""}" data-experience="${escapeHtml(profile.experience)}"><span class="profile-avatar">${escapeHtml((profile.name || "?").slice(0,1).toUpperCase())}</span><div><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(`${mode.name} · ${mode.role}`)}</span><small>${escapeHtml(mode.verbs)}</small></div><div class="profile-card-actions"><button type="button" data-action="select-profile" data-profile-id="${escapeHtml(profile.id)}">Use</button><button type="button" data-action="edit-profile" data-profile-id="${escapeHtml(profile.id)}">Edit</button></div></article>`;
+    };
     $("#profile-list").innerHTML = profiles.map((profile) => card(profile)).join("");
     $("#profile-picker-list").innerHTML = profiles.map((profile) => card(profile, true)).join("");
   }
@@ -990,7 +1141,7 @@
     const experience = $('input[name="experience"]:checked', $("#profile-form"))?.value || profile.experience;
     profile.name = name || profile.name;
     profile.experience = ["navigator", "explorer"].includes(experience) ? experience : profile.experience;
-    profile.roleLabel = profile.experience === "navigator" ? "Independent traveller" : "Visual explorer";
+    profile.roleLabel = experienceDefinition(profile).role;
     saveState();
     $("#profile-dialog").close();
     renderAll();
@@ -1036,14 +1187,15 @@
   function claimDayBadge() {
     const day = getSelectedAdventureDay();
     const progress = getDayProgress(day.id);
-    const missions = visibleMissions(day);
-    if (!badgeEligibility(day, progress, missions).eligible) return;
+    const content = experienceContent(day);
+    const missions = content.missions;
+    if (!badgeEligibility(day, progress, missions, content.spotting).eligible) return;
     progress.badgeClaimed = true;
     saveState();
     renderAdventure();
     renderHomeProfileProgress();
     renderMemories();
-    showToast(`${day.adventure.badge.name} added to Memories.`);
+    showToast(`${content.badge?.name || "Day badge"} added to Memories.`);
   }
 
   function exportBackup() {

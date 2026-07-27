@@ -1,48 +1,50 @@
-# v0.3.0 RC1 Test Report
+# v0.3.0 RC2 Test Report
 
-**Build tested:** Bobsx4 Road Companion v0.3.0 RC1  
+**Build tested:** Bobsx4 Road Companion v0.3.0 RC2  
 **Test date:** July 27, 2026  
-**Result:** Automated/static release checks passed; physical iPhone/iPad testing remains required before promotion.
+**Result:** Automated/static and headless responsive rendering checks passed; physical iPhone/iPad acceptance remains required.
 
-## Automated checks completed
+## Automated checks
 
 | Test | Result | Notes |
 |---|---|---|
 | JavaScript syntax | PASS | `app.js`, `road-data.js`, and `service-worker.js` passed `node --check`. |
-| Adventure data validation | PASS | 1 Adventure, 10 sequential days, 2 profiles, 14 available badges, unique mission/spotting IDs, required briefings/facts/photo prompts/teasers. |
-| Manifest consistency | PASS | App identity, scope/start URL, version code, icons, and data schema agree across source files. |
-| Offline shell inventory | PASS | Service worker includes the app shell and uses cache `bobsx4-road-companion-v0.3.0-rc1`. |
-| Runtime rendering smoke test | PASS | Five views rendered; v0.3.0 RC1 displayed; dynamic July 27 countdown rendered as 3 days; current/next day selected correctly. |
-| Adventure interaction smoke test | PASS | Missions, Road Quest counters, rating, journal, badge eligibility/claim, profile switch, and scrapbook rendering passed. |
-| Local hotel test | PASS | Hotel name/address/confirmation saved to local storage and changed route links. |
-| v0.2 migration test | PASS | Legacy local hotel confirmation, notes, completed day, and custom list item migrated to schema 3. |
-| Privacy/source scan | PASS | No real confirmation number or work-project terms in public release source. Obsolete concert and Cabela's itinerary content absent from `road-data.js`. |
-| HTML structure | PASS | 104 IDs, all unique. Tomorrow teaser appears after the full Adventure grid. |
-| Asset inventory | PASS | Required app files and icons exist and are non-empty. PNG dimensions match manifest declarations. |
-| Local HTTP delivery | PASS | App shell, scripts, stylesheet, service worker, manifest, release manifest, and icon returned HTTP 200 from a local static server. |
+| HTML IDs | PASS | 126 IDs; all unique. |
+| Adventure data | PASS | 10 days; every day contains complete Navigator and Explorer mode packs. |
+| Mode distinction | PASS | Every day has different briefings, missions, observations, photo prompt, badge, and teaser by mode. |
+| Mission/observation IDs | PASS | Unique within each day/mode pack. |
+| Published version | PASS | App data, index, release manifest, script query strings, and cache use RC2. |
+| Mobile runtime | PASS | Navigator and Explorer rendered and switched successfully at 390×844. |
+| Navigator runtime | PASS | `Navigator briefing`, `Navigator assignments`, `Field log`, Navigator-specific mission/observation/badge rendered. |
+| Explorer runtime | PASS | `Today's adventure`, `Today's missions`, `Road Quest`, Explorer-specific mission/sighting/badge rendered. |
+| Responsive iPad | PASS | Two-column Adventure layout rendered at 1180×820. |
+| Mode-aware metrics | PASS | App code counts only the active mode's visible missions and observations. |
+| Interaction separation | PASS | Navigator progress survived profile switching; Explorer opened with zero independent progress and its own badge. |
+| Mobile section order | PASS | Navigator and Explorer rendered different card order on the same day. |
+| State compatibility | PASS | Storage schema remains v3; existing hotels, confirmation numbers, names, journals, and checks remain compatible. |
+| Offline inventory | PASS | Service worker uses `bobsx4-road-companion-v0.3.0-rc2` and caches RC2 asset URLs. |
 
-## Runtime smoke-test outcome
+## Runtime comparison captured
 
 ```text
-Version: 0.3.0 RC1
-Countdown on 2026-07-27: 3 days
-Views rendered: 5
-Day badge: claimed successfully
-Profile switch: Navigator → Explorer
-Local hotel save: passed
-Legacy migration: passed
+Navigator:
+Navigator briefing | Navigator assignments | Field log
+First assignment: Predict the Lethbridge arrival time before leaving Edmonton
+First observation: Major highway interchange
+Badge: Launch Coordinator
+
+Explorer:
+Today's adventure | Today's missions | Road Quest
+First mission: Choose the first official road-trip song
+First sighting: Grain elevator
+Badge: Open-Road Scout
 ```
 
-## Tests that require the family's devices
+## Physical-device tests still required
 
-A simulated/static environment cannot fully verify Safari PWA behaviour, iPhone safe-area rendering, iPad rotation, Home Screen cache activation, keyboard behaviour, or offline relaunch on iOS/iPadOS. Those items are intentionally listed in `TESTING_CHECKLIST.md` and are the primary RC1 acceptance tests.
-
-## Promotion recommendation
-
-Keep this build at **RC1** until:
-
-- the existing Lethbridge local confirmation is confirmed after migration;
-- bottom navigation remains fixed during long scrolls on iPhone;
-- iPad portrait and landscape layouts pass visual review;
-- profile data remains separate across repeated use;
-- offline Home Screen relaunch passes after one online load.
+- Safari/Home Screen refresh after GitHub Pages deployment.
+- iPhone safe-area and keyboard behaviour.
+- iPad portrait and landscape review by the younger traveller.
+- Tone review by the oldest traveller: Navigator should feel teen-appropriate rather than childish.
+- Offline relaunch after one online load.
+- Existing local Lethbridge reservation migration.
