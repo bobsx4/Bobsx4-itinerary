@@ -1,0 +1,27 @@
+Northwest Family Road Trip 2026 PWA v0.1.0
+Build verification date: July 25, 2026
+
+PASS - JavaScript syntax: app.js
+PASS - JavaScript syntax: trip-data.js
+PASS - JavaScript syntax: service-worker.js
+PASS - Manifest JSON validation
+PASS - Service-worker app-shell asset validation
+PASS - Manifest icon and screenshot asset validation
+PASS - Local HTTP serving and MIME types
+PASS - PWA icon dimensions and formats
+PASS - Mobile 390 x 844 render
+PASS - Desktop 1280 x 800 route render
+PASS - Ten itinerary cards rendered
+PASS - Ten daily route rows rendered
+PASS - Nine editable night cards rendered
+PASS - Thirteen official live-check links rendered
+PASS - Hotel edit form interaction
+PASS - Shopping and packing checklist interaction
+PASS - Custom checklist item interaction
+PASS - Day-complete and daily-note interaction
+PASS - Backup export, local reset, and backup restore interaction
+PASS - No console or page errors during the full mobile interaction test
+PASS - No external front-end libraries or remote assets
+
+Persistence uses standard browser localStorage. Offline installation requires HTTPS and one successful online load.
+Live traffic, maps, weather, closures, border notices, and official-source links still require internet access.

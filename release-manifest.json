@@ -1,0 +1,17 @@
+{
+  "app": "Bobsx4 Road Companion",
+  "version": "0.2.1",
+  "releaseType": "repository-ready",
+  "deploymentTarget": "GitHub Pages",
+  "repository": "Bobsx4-itinerary",
+  "cacheName": "northwest-road-trip-v0.2.1",
+  "preservesLocalStorage": true,
+  "primaryFiles": [
+    "index.html",
+    "styles.css",
+    "app.js",
+    "trip-data.js",
+    "service-worker.js",
+    "manifest.webmanifest"
+  ]
+}
