@@ -1,27 +1,18 @@
-# Release Manifest - v0.3.0 RC3.2
-
-| Path | Purpose |
-|---|---|
-| `.nojekyll` | Prevents GitHub Pages/Jekyll processing. |
-| `index.html` | App shell, five views, diagnostics, dialogs, and navigation. |
-| `styles.css` | Mobile/iPad layouts, mode themes, and response controls. |
-| `road-data.js` | Public itinerary, mode packs, assignment response definitions, facts, badges, and teasers. |
-| `app.js` | State, rendering, responses, journals, stays, backup, updates, and migration. |
-| `service-worker.js` | Offline shell cache and old-version cleanup. |
-| `manifest.webmanifest` | PWA identity and icons. |
-| `release-manifest.json` | Published-version check. |
-| `icons/` | App, maskable, Apple touch, favicon, and source SVG icons. |
-| `RC3_FEATURE_PATCH.diff` | Unified patch applied to the RC2 baseline before version bump. |
-| `README.md` | Current project overview and release provenance. |
-| `RELEASE_NOTES.md` | RC3.2 scope and response details. |
-| `CHANGELOG.md` | Cumulative version history. |
-| `KNOWN_ISSUES.md` | Current limits and deferred capabilities. |
-| `TESTING_CHECKLIST.md` | Device and RC3.2 acceptance tests. |
-| `TEST_REPORT.md` | Automated validation evidence. |
-| `validation-status.json` | Machine-readable current release status. |
-| `RELEASE_STATUS.md` | Release gate and required physical testing. |
-| `BUILD_PROVENANCE.md` | Clean rebuild source and patch method. |
-| `FILE_HASHES_SHA256.txt` | SHA-256 for every packaged file except itself. |
-| `GITHUB_BROWSER_UPDATE.md` | Computer/browser deployment procedure. |
-| `WORKING_COPY_UPDATE.md` | iPhone/iPad deployment procedure. |
-| `start-local.sh` / `start-local.bat` | Local static server helpers. |
+{
+  "name": "Bobsx4 Road Companion",
+  "short_name": "Road Companion",
+  "description": "Offline-first family travel companion, Adventure Mode, journal, badges, and scrapbook.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#eef4f6",
+  "theme_color": "#152f45",
+  "categories": ["travel", "lifestyle", "utilities"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
