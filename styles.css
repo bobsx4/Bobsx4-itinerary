@@ -287,38 +287,8 @@ p { line-height: 1.55; }
 .compact-list { display: grid; gap: 10px; margin-top: 14px; }
 .compact-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.35; }
 .compact-item .dot { width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--accent); flex: 0 0 auto; }
-.quick-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.65rem;
-}
-
-.quick-card {
-  box-sizing: border-box;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  padding-inline: 0.35rem;
-  overflow: hidden;
-}
-
-.quick-card > span {
-  min-width: 0;
-  max-width: 100%;
-}
-
-.quick-card > span:last-child {
-  font-size: clamp(0.7rem, 3vw, 0.85rem);
-  line-height: 1.15;
-  text-align: center;
-  white-space: normal;
-}
-
-@media (max-width: 340px) {
-  .quick-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
+.quick-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+.quick-card { min-height: 80px; border: 1px solid var(--line); border-radius: 15px; background: var(--soft-2); color: var(--ink); display: grid; place-items: center; align-content: center; gap: 7px; font-weight: 750; }
 .quick-icon { font-size: 22px; color: var(--brand-2); }
 
 .next-day {
