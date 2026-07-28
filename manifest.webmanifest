@@ -1,22 +1,407 @@
-# Release Manifest — v0.3.0 RC3
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#152f45">
+  <meta name="description" content="Bobsx4 Road Companion: an offline-first family travel companion, adventure game, journal, and scrapbook.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Road Companion">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="stylesheet" href="styles.css?v=0.3.0-rc3-1">
+  <style id="road-companion-critical-fallback">
+    [hidden] { display: none !important; }
+    .asset-diagnostic {
+      box-sizing: border-box; position: sticky; top: 0; z-index: 99999;
+      margin: 0; padding: 12px 16px; background: #7a211b; color: #fff;
+      font: 600 15px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,.25);
+    }
+    body.asset-failure { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  </style>
+  <title>Bobsx4 Road Companion</title>
+</head>
+<body>
+  <div id="asset-diagnostic" class="asset-diagnostic" role="alert" hidden>
+    Road Companion could not load <strong>styles.css</strong>. Upload the RC3.1 runtime files to the repository root, wait for Pages to deploy, then refresh.
+  </div>
+  <a class="skip-link" href="#main-content">Skip to content</a>
 
-| Path | Purpose |
-|---|---|
-| `.nojekyll` | Prevents GitHub Pages/Jekyll processing. |
-| `index.html` | App shell, five views, mode-aware Adventure structure, dialogs, and navigation. |
-| `styles.css` | Mobile/iPad layouts, distinct modes, assignment response panels, and Memories response styling. |
-| `road-data.js` | Public itinerary, two complete experience packs, structured response fields, and stable fact IDs. |
-| `app.js` | State, rendering, assignment/fact responses, journals, observations, stays, backup, updates, and migration. |
-| `service-worker.js` | RC3 offline shell cache and old-version cleanup. |
-| `manifest.webmanifest` | PWA identity and icons. |
-| `release-manifest.json` | Published-version check. |
-| `icons/` | App, maskable, Apple touch, favicon, and source SVG icons. |
-| `README.md` | Project overview. |
-| `RELEASE_NOTES.md` | RC3 assignment-response scope. |
-| `CHANGELOG.md` | Version history. |
-| `KNOWN_ISSUES.md` | Current limits and deferred capabilities. |
-| `TESTING_CHECKLIST.md` | Device and RC3 acceptance tests. |
-| `GITHUB_BROWSER_UPDATE.md` | Computer/browser deployment procedure. |
-| `WORKING_COPY_UPDATE.md` | iPhone/iPad deployment procedure. |
-| `TEST_REPORT.md` | Test evidence for this package. |
-| `start-local.sh` / `start-local.bat` | Local static server helpers. |
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="brand-button" type="button" data-action="go-home" aria-label="Open Home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 64 64" role="img">
+            <path d="M6 49L23 21l8 13 9-15 18 30H6z" fill="currentColor" opacity=".24"></path>
+            <path d="M4 50h56" stroke="currentColor" stroke-width="4" stroke-linecap="round"></path>
+            <path d="M14 48c8-17 18-12 25-20 6-7 8-14 13-21" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 8"></path>
+          </svg>
+        </span>
+        <span class="topbar-title">
+          <span class="eyebrow">Bobsx4</span>
+          <strong>Road Companion</strong>
+        </span>
+      </button>
+
+      <div class="topbar-actions">
+        <button id="profile-button" class="profile-pill" type="button" data-action="open-profile-menu" aria-label="Choose Adventure profile">
+          <span id="profile-initials" class="profile-initials">N</span>
+          <span id="profile-name" class="profile-name">Navigator</span>
+        </button>
+        <span class="version-badge" aria-label="App version">v<span id="header-version">0.3.0 RC3.1</span></span>
+        <span id="network-status" class="status-pill" aria-live="polite">Checking</span>
+        <button id="refresh-button" class="icon-button refresh-button" type="button" data-action="refresh-app" aria-label="Refresh app" title="Refresh app">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6.1 8.4A7 7 0 0 1 18.5 7M17.9 15.6A7 7 0 0 1 5.5 17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </button>
+        <button id="install-button" class="icon-button hidden" type="button" aria-label="Install app" title="Install app">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0-4-4m4 4 4-4M5 17v3h14v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <main id="main-content" tabindex="-1">
+      <section id="view-home" class="view active" data-view="home" aria-labelledby="home-title">
+        <div class="hero-card home-hero">
+          <div class="hero-copy">
+            <span id="trip-state-label" class="hero-kicker">Loading adventure</span>
+            <h1 id="home-title">Northwest Adventure 2026</h1>
+            <p id="hero-subtitle">Mountains, rides, shopping, ferries, and the long way home.</p>
+            <div class="hero-actions">
+              <button class="primary-button" type="button" data-action="open-current-adventure">Open today’s adventure</button>
+              <button class="secondary-button" type="button" data-action="open-trip-days">View trip plan</button>
+            </div>
+          </div>
+          <div class="hero-art" aria-hidden="true"><span class="hero-sun"></span><span class="hero-road"></span></div>
+          <div id="home-stats" class="stats-grid" aria-label="Adventure summary"></div>
+        </div>
+
+        <div id="countdown-card" class="countdown-card" aria-live="polite"></div>
+
+        <div class="dashboard-grid">
+          <section class="section-card dashboard-primary" aria-labelledby="next-up-title">
+            <div class="section-heading">
+              <div><span class="section-kicker">Mission control</span><h2 id="next-up-title">Next up</h2></div>
+              <button class="text-button" type="button" data-action="open-trip-days">All days</button>
+            </div>
+            <div id="next-day-card"></div>
+          </section>
+
+          <section class="section-card" aria-labelledby="adventure-progress-title">
+            <div class="section-heading">
+              <div><span class="section-kicker">Adventure Mode</span><h2 id="adventure-progress-title">Profile progress</h2></div>
+              <button class="text-button" type="button" data-action="open-adventure">Open</button>
+            </div>
+            <div id="profile-progress"></div>
+          </section>
+
+          <section class="section-card" aria-labelledby="readiness-title">
+            <div class="section-heading">
+              <div><span class="section-kicker">Before departure</span><h2 id="readiness-title">Trip readiness</h2></div>
+              <span id="readiness-label" class="progress-label">0%</span>
+            </div>
+            <div class="progress-track" aria-hidden="true"><span id="readiness-bar"></span></div>
+            <div id="reminders-list" class="compact-list"></div>
+          </section>
+
+          <section class="section-card" aria-labelledby="quick-actions-title">
+            <div class="section-heading">
+              <div><span class="section-kicker">One tap</span><h2 id="quick-actions-title">Quick actions</h2></div>
+            </div>
+            <div class="quick-grid">
+              <button type="button" class="quick-card" data-action="open-stays"><span class="quick-icon">⌂</span><span>Stays</span></button>
+              <button type="button" class="quick-card" data-action="open-lists"><span class="quick-icon">✓</span><span>Lists</span></button>
+              <button type="button" class="quick-card" data-action="open-memories"><span class="quick-icon">✎</span><span>Memories</span></button>
+              <button type="button" class="quick-card" data-action="refresh-app"><span class="quick-icon">↻</span><span>Refresh</span></button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="view-trip" class="view" data-view="trip" aria-labelledby="trip-title">
+        <div class="page-intro">
+          <span class="section-kicker">Adult trip tools</span>
+          <h1 id="trip-title">Trip</h1>
+          <p>Itinerary, route, stays, and lists share one adventure data model.</p>
+        </div>
+
+        <div class="section-tabs" role="tablist" aria-label="Trip tools">
+          <button type="button" role="tab" aria-selected="true" data-trip-tab="days">Days</button>
+          <button type="button" role="tab" aria-selected="false" data-trip-tab="route">Route</button>
+          <button type="button" role="tab" aria-selected="false" data-trip-tab="stays">Stays</button>
+          <button type="button" role="tab" aria-selected="false" data-trip-tab="lists">Lists</button>
+        </div>
+
+        <section id="trip-pane-days" class="trip-pane active" data-trip-pane="days">
+          <div class="toolbar">
+            <button class="chip active" type="button" data-filter="all">All days</button>
+            <button class="chip" type="button" data-filter="upcoming">Upcoming</button>
+            <button class="chip" type="button" data-filter="incomplete">Not done</button>
+            <button class="chip" type="button" data-action="print-trip">Print</button>
+          </div>
+          <div id="itinerary-list" class="itinerary-list"></div>
+        </section>
+
+        <section id="trip-pane-route" class="trip-pane" data-trip-pane="route">
+          <div class="map-card">
+            <div id="route-map" class="route-map" role="img" aria-label="Geographic overview of the Northwest Adventure route"></div>
+            <div class="map-legend">
+              <span><i class="legend-dot start"></i> Start</span>
+              <span><i class="legend-dot overnight"></i> Overnight</span>
+              <span><i class="legend-dot highlight"></i> Activity</span>
+              <span><i class="legend-dot home"></i> Home</span>
+            </div>
+          </div>
+          <p class="supporting-copy">The overview is geographic rather than turn-by-turn. Daily map links substitute saved hotel street addresses when available.</p>
+          <div class="route-overview-actions">
+            <button class="primary-button" type="button" data-action="open-google-overview-1">Google route: outbound</button>
+            <button class="secondary-button" type="button" data-action="open-google-overview-2">Google route: return</button>
+          </div>
+          <div id="route-day-list" class="route-day-list"></div>
+        </section>
+
+        <section id="trip-pane-stays" class="trip-pane" data-trip-pane="stays">
+          <div class="section-heading pane-heading">
+            <div><span class="section-kicker">Stored on this device</span><h2>Stays</h2></div>
+          </div>
+          <p class="supporting-copy">Confirmation numbers and personal notes stay in this browser and are never published in the GitHub source.</p>
+          <div id="hotel-list" class="hotel-list"></div>
+        </section>
+
+        <section id="trip-pane-lists" class="trip-pane" data-trip-pane="lists">
+          <div class="segmented-control" role="tablist" aria-label="Checklist type">
+            <button type="button" role="tab" aria-selected="true" data-list-tab="shopping">Shopping</button>
+            <button type="button" role="tab" aria-selected="false" data-list-tab="packing">Packing</button>
+            <button type="button" role="tab" aria-selected="false" data-list-tab="border">Border</button>
+          </div>
+          <div id="list-progress-wrap" class="list-progress-wrap"></div>
+          <div id="checklist-content"></div>
+          <form id="custom-item-form" class="add-item-form">
+            <label class="sr-only" for="custom-item-input">Add a checklist item</label>
+            <input id="custom-item-input" name="item" type="text" maxlength="90" placeholder="Add an item">
+            <button type="submit">Add</button>
+          </form>
+        </section>
+      </section>
+
+      <section id="view-adventure" class="view" data-view="adventure" aria-labelledby="adventure-title">
+        <div class="adventure-header">
+          <div>
+            <span id="adventure-profile-label" class="section-kicker">Adventure Mode</span>
+            <h1 id="adventure-title">Today’s adventure</h1>
+            <p id="adventure-date-line"></p>
+          </div>
+          <div class="day-stepper" aria-label="Choose adventure day">
+            <button type="button" data-action="previous-adventure-day" aria-label="Previous day">‹</button>
+            <button id="adventure-today-button" type="button" data-action="current-adventure-day">Today</button>
+            <button type="button" data-action="next-adventure-day" aria-label="Next day">›</button>
+          </div>
+        </div>
+
+        <div id="adventure-day-strip" class="adventure-day-strip" role="list" aria-label="Adventure days"></div>
+
+        <section id="mission-briefing" class="mission-briefing" aria-labelledby="mission-briefing-title"></section>
+
+        <div id="adventure-grid" class="adventure-grid">
+          <div id="adventure-left-column" class="adventure-column">
+            <section id="missions-card" class="section-card mode-card missions-card" aria-labelledby="missions-title">
+              <div class="section-heading">
+                <div><span id="missions-kicker" class="section-kicker">Do</span><h2 id="missions-title">Today’s mission</h2><p id="missions-intro" class="section-intro"></p></div>
+                <span id="mission-progress-label" class="progress-label">0%</span>
+              </div>
+              <div class="progress-track compact" aria-hidden="true"><span id="mission-progress-bar"></span></div>
+              <div id="mission-list" class="mission-list"></div>
+            </section>
+
+            <section id="facts-card" class="section-card mode-card facts-card" aria-labelledby="facts-title">
+              <div class="section-heading"><div><span id="facts-kicker" class="section-kicker">Know the route</span><h2 id="facts-title">Field notes</h2><p id="facts-intro" class="section-intro"></p></div></div>
+              <div id="fact-list" class="fact-list"></div>
+            </section>
+
+            <section id="photo-mission-card" class="section-card mode-card photo-mission-card" aria-labelledby="photo-mission-title">
+              <div class="section-heading"><div><span id="photo-kicker" class="section-kicker">Frame the day</span><h2 id="photo-mission-title">Photo mission</h2><p id="photo-intro" class="section-intro"></p></div></div>
+              <p id="photo-mission-text"></p>
+              <label class="photo-check"><input id="photo-mission-check" type="checkbox"><span id="photo-completion-label">Photo mission completed</span></label>
+              <p id="photo-storage-note" class="fine-print">RC2 records completion but does not yet store the photo itself.</p>
+            </section>
+          </div>
+
+          <div id="adventure-right-column" class="adventure-column">
+            <section id="road-quest-card" class="section-card mode-card road-quest-card" aria-labelledby="road-quest-title">
+              <div class="section-heading">
+                <div><span id="road-quest-kicker" class="section-kicker">Watch the road</span><h2 id="road-quest-title">Road Quest</h2><p id="road-quest-intro" class="section-intro"></p></div>
+                <span id="sighting-total" class="sighting-total">0 finds</span>
+              </div>
+              <p id="road-quest-note" class="honour-note">Honor system: count only what you genuinely spot. Bonus credibility for a second-person verification.</p>
+              <div id="spotting-grid" class="spotting-grid"></div>
+            </section>
+
+            <section id="journal-card" class="section-card mode-card journal-card" aria-labelledby="journal-title">
+              <div class="section-heading">
+                <div><span id="journal-kicker" class="section-kicker">Remember it</span><h2 id="journal-title">Daily field journal</h2><p id="journal-intro" class="section-intro"></p></div>
+                <span id="journal-save-status" class="save-status" aria-live="polite"></span>
+              </div>
+              <p id="rating-prompt" class="rating-prompt">Rate the day</p><div id="rating-control" class="rating-control" aria-label="Rate the day"></div>
+              <div id="journal-fields" class="journal-fields"></div>
+            </section>
+
+            <section id="day-badge-card" class="section-card mode-card badge-claim-card" aria-labelledby="day-badge-title"></section>
+          </div>
+        </div>
+
+        <section id="tomorrow-teaser" class="tomorrow-teaser" aria-labelledby="tomorrow-teaser-title"></section>
+      </section>
+
+      <section id="view-memories" class="view" data-view="memories" aria-labelledby="memories-title">
+        <div class="page-intro memories-intro">
+          <span class="section-kicker">The trip as you remember it</span>
+          <h1 id="memories-title">Memories</h1>
+          <p>Ratings, sightings, journals, and badges are kept separately for each Adventure profile.</p>
+        </div>
+
+        <div id="memory-stats" class="memory-stats"></div>
+
+        <section class="section-block" aria-labelledby="badges-title">
+          <div class="section-heading"><div><span class="section-kicker">Collected</span><h2 id="badges-title">Badges</h2></div></div>
+          <div id="badge-gallery" class="badge-gallery"></div>
+        </section>
+
+        <section class="section-block" aria-labelledby="scrapbook-title">
+          <div class="section-heading"><div><span class="section-kicker">Day by day</span><h2 id="scrapbook-title">Adventure scrapbook</h2></div></div>
+          <div id="scrapbook-list" class="scrapbook-list"></div>
+        </section>
+      </section>
+
+      <section id="view-settings" class="view" data-view="settings" aria-labelledby="settings-title">
+        <div class="page-intro">
+          <span class="section-kicker">Profiles, privacy, and app data</span>
+          <h1 id="settings-title">Settings</h1>
+          <p>Road Companion is offline-first. Personal data stays on this device unless you export it.</p>
+        </div>
+
+        <div class="settings-grid">
+          <section class="section-card" aria-labelledby="profiles-title">
+            <div class="section-heading"><div><span class="section-kicker">Adventure Mode</span><h2 id="profiles-title">Profiles</h2></div></div>
+            <div id="profile-list" class="profile-list"></div>
+            <p class="fine-print">Names and experience styles are stored locally, so the public site does not expose family names.</p>
+          </section>
+
+          <section class="section-card" aria-labelledby="update-title">
+            <div class="section-heading"><div><span class="section-kicker">PWA controls</span><h2 id="update-title">Install and refresh</h2></div></div>
+            <div id="install-help" class="install-help"></div>
+            <div class="button-stack">
+              <button class="primary-button" type="button" data-action="refresh-app">Refresh app now</button>
+              <button class="secondary-button" type="button" data-action="check-update">Check for update</button>
+            </div>
+            <p class="version-line">Version <strong id="app-version">0.3.0 RC3.1</strong> · built <span id="build-date">2026-07-28</span></p>
+          </section>
+
+          <section class="section-card" aria-labelledby="backup-title">
+            <div class="section-heading"><div><span class="section-kicker">Portable data</span><h2 id="backup-title">Backup and restore</h2></div></div>
+            <p class="supporting-copy">The backup includes profiles, journals, badges, tallies, checklists, notes, and local stay details.</p>
+            <div class="button-stack">
+              <button class="primary-button" type="button" data-action="export-backup">Export backup</button>
+              <label class="secondary-button file-button" for="import-file">Import backup</label>
+              <input id="import-file" type="file" accept="application/json,.json" hidden>
+              <button class="danger-button" type="button" data-action="reset-data">Reset local data</button>
+            </div>
+          </section>
+
+          <section class="section-card" aria-labelledby="trip-notes-title">
+            <div class="section-heading"><div><span class="section-kicker">Adult notes</span><h2 id="trip-notes-title">General trip notes</h2></div></div>
+            <label class="field-label" for="general-notes">Notes saved on this device</label>
+            <textarea id="general-notes" rows="7" placeholder="Parking instructions, ideas, reminders, favourite stops..."></textarea>
+            <span id="notes-save-status" class="save-status" aria-live="polite"></span>
+          </section>
+
+          <section class="section-card" aria-labelledby="live-checks-title">
+            <div class="section-heading"><div><span class="section-kicker">Verify online</span><h2 id="live-checks-title">Live checks</h2></div></div>
+            <div id="live-checks-list" class="live-checks-list"></div>
+          </section>
+
+          <section class="privacy-note" aria-label="Privacy note">
+            <strong>Private by design</strong>
+            <p>No account, advertising, analytics, or server database. Each phone or iPad keeps its own progress unless a backup is moved manually.</p>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Primary navigation">
+      <button type="button" class="nav-button active" data-nav="home" aria-current="page"><span class="nav-icon">⌂</span><span>Home</span></button>
+      <button type="button" class="nav-button" data-nav="trip"><span class="nav-icon">≡</span><span>Trip</span></button>
+      <button type="button" class="nav-button" data-nav="adventure"><span class="nav-icon">⌖</span><span>Adventure</span></button>
+      <button type="button" class="nav-button" data-nav="memories"><span class="nav-icon">✎</span><span>Memories</span></button>
+      <button type="button" class="nav-button" data-nav="settings"><span class="nav-icon">•••</span><span>Settings</span></button>
+    </nav>
+  </div>
+
+  <dialog id="hotel-dialog" class="modal-dialog">
+    <form id="hotel-form" method="dialog">
+      <div class="dialog-header">
+        <div><span class="section-kicker">Stay details</span><h2 id="hotel-dialog-title">Edit stay</h2></div>
+        <button class="icon-button" type="button" data-action="close-hotel-dialog" aria-label="Close">×</button>
+      </div>
+      <input id="hotel-day-id" name="dayId" type="hidden">
+      <div class="form-grid">
+        <label>Hotel or rental<input id="hotel-name" name="name" type="text" maxlength="100" autocomplete="organization"></label>
+        <label>Address<input id="hotel-address" name="address" type="text" maxlength="160" autocomplete="street-address"></label>
+        <label>Confirmation number<input id="hotel-confirmation" name="confirmation" type="text" maxlength="80" autocomplete="off"></label>
+        <label>Phone<input id="hotel-phone" name="phone" type="tel" maxlength="40" autocomplete="tel"></label>
+        <label>Website<input id="hotel-website" name="website" type="url" maxlength="220" autocomplete="url" placeholder="https://"></label>
+        <div class="two-column-fields">
+          <label>Check-in<input id="hotel-checkin" name="checkin" type="time"></label>
+          <label>Check-out<input id="hotel-checkout" name="checkout" type="time"></label>
+        </div>
+        <label>Notes<textarea id="hotel-notes" name="notes" rows="4" maxlength="500" placeholder="Parking, breakfast, room type, cancellation deadline..."></textarea></label>
+      </div>
+      <div class="dialog-actions"><button class="secondary-button" type="button" data-action="close-hotel-dialog">Cancel</button><button class="primary-button" type="submit">Save stay</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="profile-dialog" class="modal-dialog compact-dialog">
+    <form id="profile-form" method="dialog">
+      <div class="dialog-header">
+        <div><span class="section-kicker">Adventure profile</span><h2 id="profile-dialog-title">Edit profile</h2></div>
+        <button class="icon-button" type="button" data-action="close-profile-dialog" aria-label="Close">×</button>
+      </div>
+      <input id="profile-id" name="profileId" type="hidden">
+      <div class="form-grid">
+        <label>Display name<input id="profile-display-name" name="displayName" type="text" maxlength="30" autocomplete="off"></label>
+        <fieldset class="experience-fieldset">
+          <legend>Experience style</legend>
+          <label class="choice-card"><input type="radio" name="experience" value="navigator"><span><strong>Navigator</strong><small>Independent tone, deeper prompts, route and photography tasks.</small></span></label>
+          <label class="choice-card"><input type="radio" name="experience" value="explorer"><span><strong>Explorer</strong><small>More visual prompts, direct missions, spotting, and simple reflections.</small></span></label>
+        </fieldset>
+      </div>
+      <div class="dialog-actions"><button class="secondary-button" type="button" data-action="close-profile-dialog">Cancel</button><button class="primary-button" type="submit">Save profile</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="profile-picker" class="modal-dialog compact-dialog">
+    <div class="dialog-header">
+      <div><span class="section-kicker">Adventure Mode</span><h2>Who is using the app?</h2></div>
+      <button class="icon-button" type="button" data-action="close-profile-picker" aria-label="Close">×</button>
+    </div>
+    <div id="profile-picker-list" class="profile-picker-list"></div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    window.addEventListener("DOMContentLoaded", function () {
+      var loaded = getComputedStyle(document.documentElement)
+        .getPropertyValue("--road-companion-css-loaded").trim() === "1";
+      if (!loaded) {
+        document.body.classList.add("asset-failure");
+        var diagnostic = document.getElementById("asset-diagnostic");
+        if (diagnostic) diagnostic.hidden = false;
+      }
+    });
+  </script>
+  <script src="road-data.js?v=0.3.0-rc3-1"></script>
+  <script src="app.js?v=0.3.0-rc3-1"></script>
+</body>
+</html>

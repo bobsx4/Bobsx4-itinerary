@@ -1,60 +1,18 @@
-# Bobsx4 Road Companion v0.3.0 RC3 — Release Notes
-
-RC3 addresses a key RC2 usability gap: many assignments asked the traveller to **predict, compare, identify, rank, or record something**, but the app only provided a completion checkbox.
-
-## Assignment response panels
-
-Selected Navigator and Explorer assignments now include a compact **Record field response** or **Add your answer** panel.
-
-The response controls support:
-
-- short text;
-- longer observations;
-- time entries;
-- numeric entries;
-- selected-choice answers;
-- multiple related fields within one assignment.
-
-Examples include:
-
-- predicted versus actual arrival time;
-- estimated versus actual ferry wait;
-- a clear change caused by elevation;
-- the most valuable Glacier stop;
-- Silverwood wait times and top-three rankings;
-- Kootenay Lake Ferry departure and arrival times;
-- animal behaviour at Kangaroo Creek Farm;
-- Mount Robson visibility;
-- final family trip verdicts.
-
-RC3 contains **71 assignments with 92 response fields** across the ten-day Navigator and Explorer experiences.
-
-## Fact and route-intelligence answers
-
-Every fact card that poses a question now includes an optional answer area:
-
-- Explorer sees **My answer**.
-- Navigator sees **Field response**.
-
-These answers remain next to the context that prompted them rather than forcing the traveller to remember everything later in the general journal.
-
-## Memories integration
-
-Assignment responses and fact answers now flow into the active profile's scrapbook under:
-
-- **Assignment records** / **Mission answers**; and
-- **Route-intelligence responses** / **Things I figured out**.
-
-Navigator and Explorer responses remain separate, just like their journals, observations, and badges.
-
-## Saving and compatibility
-
-- Responses save automatically on the current device.
-- Answered panels reopen automatically when revisiting a day.
-- Existing RC1/RC2 local state remains compatible.
-- Hotel confirmations, profile names, existing journals, checklists, and tallies are preserved.
-- The storage schema remains v3; this is an additive update.
-
-## Still deferred
-
-Automatic route-distance recalculation, live family synchronization, photo storage, weather/fuel feeds, and multi-Adventure selection remain deferred. See `KNOWN_ISSUES.md`.
+{
+  "name": "Bobsx4 Road Companion",
+  "short_name": "Road Companion",
+  "description": "Offline-first family travel companion, Adventure Mode, journal, badges, and scrapbook.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#eef4f6",
+  "theme_color": "#152f45",
+  "categories": ["travel", "lifestyle", "utilities"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
