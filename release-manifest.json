@@ -1,0 +1,11 @@
+# Release Status - v0.3.0 RC3.2
+
+| Gate | Current status | Required testing to advance |
+|---|---|---|
+| Clean package integrity | Passed | None; archive and file hashes verified |
+| Automated runtime | Passed | None; syntax, data, rendering, response, persistence, and separation checks passed |
+| GitHub Pages deployment | Pending user test | Full styling, correct version, no diagnostic banner |
+| iPhone | Pending user test | Keyboard, safe area, fixed menu, response persistence, offline relaunch |
+| iPad | Pending user test | Portrait/landscape layout, large touch targets, response entry |
+| Traveller tone | Pending family test | Navigator remains teen-appropriate; Explorer remains engaging |
+| Promotion to v0.3.0 | Not ready | Complete physical-device tests and resolve major issues |
