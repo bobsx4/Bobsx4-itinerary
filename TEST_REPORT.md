@@ -1,4 +1,5 @@
 :root {
+  --road-companion-css-loaded: 1;
   color-scheme: light;
   --ink: #172433;
   --muted: #627080;

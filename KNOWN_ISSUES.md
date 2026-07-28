@@ -11,10 +11,23 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-  <link rel="stylesheet" href="styles.css?v=0.3.0-rc3">
+  <link rel="stylesheet" href="styles.css?v=0.3.0-rc3-2">
+  <style id="road-companion-critical-fallback">
+    [hidden] { display: none !important; }
+    .asset-diagnostic {
+      box-sizing: border-box; position: sticky; top: 0; z-index: 99999;
+      margin: 0; padding: 12px 16px; background: #7a211b; color: #fff;
+      font: 600 15px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,.25);
+    }
+    body.asset-failure { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  </style>
   <title>Bobsx4 Road Companion</title>
 </head>
 <body>
+  <div id="asset-diagnostic" class="asset-diagnostic" role="alert" hidden>
+    Road Companion could not load <strong>styles.css</strong>. Upload the RC3.2 clean-rebuild runtime files to the repository root, wait for Pages to deploy, then refresh.
+  </div>
   <a class="skip-link" href="#main-content">Skip to content</a>
 
   <div class="app-shell">
@@ -38,7 +51,7 @@
           <span id="profile-initials" class="profile-initials">N</span>
           <span id="profile-name" class="profile-name">Navigator</span>
         </button>
-        <span class="version-badge" aria-label="App version">v<span id="header-version">0.3.0 RC3</span></span>
+        <span class="version-badge" aria-label="App version">v<span id="header-version">0.3.0 RC3.2</span></span>
         <span id="network-status" class="status-pill" aria-live="polite">Checking</span>
         <button id="refresh-button" class="icon-button refresh-button" type="button" data-action="refresh-app" aria-label="Refresh app" title="Refresh app">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6.1 8.4A7 7 0 0 1 18.5 7M17.9 15.6A7 7 0 0 1 5.5 17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
@@ -282,7 +295,7 @@
               <button class="primary-button" type="button" data-action="refresh-app">Refresh app now</button>
               <button class="secondary-button" type="button" data-action="check-update">Check for update</button>
             </div>
-            <p class="version-line">Version <strong id="app-version">0.3.0 RC3</strong> · built <span id="build-date">2026-07-27</span></p>
+            <p class="version-line">Version <strong id="app-version">0.3.0 RC3.2</strong> · built <span id="build-date">2026-07-28</span></p>
           </section>
 
           <section class="section-card" aria-labelledby="backup-title">
@@ -377,7 +390,18 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-  <script src="road-data.js?v=0.3.0-rc3"></script>
-  <script src="app.js?v=0.3.0-rc3"></script>
+  <script>
+    window.addEventListener("DOMContentLoaded", function () {
+      var loaded = getComputedStyle(document.documentElement)
+        .getPropertyValue("--road-companion-css-loaded").trim() === "1";
+      if (!loaded) {
+        document.body.classList.add("asset-failure");
+        var diagnostic = document.getElementById("asset-diagnostic");
+        if (diagnostic) diagnostic.hidden = false;
+      }
+    });
+  </script>
+  <script src="road-data.js?v=0.3.0-rc3-2"></script>
+  <script src="app.js?v=0.3.0-rc3-2"></script>
 </body>
 </html>
