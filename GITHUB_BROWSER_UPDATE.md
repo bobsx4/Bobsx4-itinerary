@@ -1,104 +1,25 @@
-# Changelog
-
-## v0.3.0 RC3 — 2026-07-27
-
-### Added
-
-- Inline response panels for assignments that require a prediction, comparison, time, number, ranking, decision, or observation.
-- 71 response-enabled assignments containing 92 structured fields across Navigator and Explorer.
-- Optional answer boxes for all 40 fact and route-intelligence prompts.
-- Text, textarea, time, number, and selected-choice response controls.
-- Automatic local saving and saved-state indicators for assignment and fact responses.
-- Assignment and question responses in the profile-specific Memories scrapbook.
-
-### Changed
-
-- Assignment cards now separate the completion checkbox from the written response.
-- Answered response panels reopen automatically when a day is revisited.
-- A response alone now marks a day as having memory content, even before the general journal is completed.
-
-### Fixed
-
-- Resolved the RC2 gap where prompts such as “record one clear change caused by elevation” had no place to record the answer.
-- Updated the offline cache and published-version metadata to RC3.
-
-## v0.3.0 RC2 — 2026-07-27
-
-### Added
-
-- Fully separate Navigator and Explorer content packs for all ten travel days.
-- Mode definitions with distinct role, icon, verbs, and visual language.
-- Navigator-specific assignments, route intelligence, Field Log observations, photo briefs, journal prompts, credentials, and next-dispatch teasers.
-- Explorer-specific missions, I-Spy Road Quest items, quick facts, photo challenges, journal prompts, badges, and tomorrow teasers.
-- Dynamic section labels, introductions, rating prompts, and mode-specific mobile ordering.
-- Mode-aware badge gallery, scrapbook labels, mission totals, and observation totals.
-
-### Changed
-
-- Explorer Road Quest now appears immediately after missions on mobile.
-- Navigator prioritizes assignments and route intelligence before the Field Log.
-- Profile cards and picker now explain what each experience actually does.
-- Adventure visuals now use indigo/navy for Navigator and teal/orange for Explorer.
-- Badge eligibility and metrics count only the active mode's visible assignments and observations.
-
-### Fixed
-
-- Resolved the RC1 issue where Navigator and Explorer appeared nearly identical.
-- Updated the offline cache and published-version metadata to RC2.
-
-## v0.3.0 RC1 — 2026-07-27
-
-### Added
-
-- Home/Mission Control dashboard.
-- Five-area navigation: Home, Trip, Adventure, Memories, Settings.
-- Adventure-based data schema with an Adventures array.
-- Two local Adventure profiles: Navigator and Explorer.
-- Locally renameable profiles and selectable experience style.
-- Profile-specific daily missions, briefings, photo prompts, and journal labels.
-- Road Quest sighting counters with per-profile storage.
-- Day ratings, field journals, daily badges, global badges, trip statistics, and scrapbook.
-- Tomorrow teaser as the last Adventure section.
-- Responsive iPhone and iPad layouts, including iPad landscape side navigation.
-- Version badge, build date, update check, and manual refresh controls.
-- Release manifest and v0.3.0 RC1 service-worker cache.
-- v0.2 local-state migration.
-- Backup/restore for the complete v3 local state.
-- Official live-check links for parks, borders, roads, ferry, Silverwood, Victoria's Secret, and Kangaroo Creek Farm.
-
-### Changed
-
-- Rebuilt the interface and data model around Road Companion rather than a single itinerary page.
-- Renamed the child-facing area to Adventure Mode.
-- Updated itinerary to Kalispell July 31 and Coeur d'Alene August 1–3.
-- Removed Missoula, the concert, and the Spokane Valley overnight.
-- Removed Cabela's from the shopping list.
-- Updated the Penticton/Clearwater day to include Kangaroo Creek Farm within the confirmed 9:00 AM–3:00 PM window.
-- Updated Sandpoint–Nelson to intentionally use the Kootenay Lake Ferry route.
-- Hotel addresses now alter the map link endpoints while displayed drive metrics remain the planned trip values.
-
-### Fixed
-
-- Bottom navigation is fixed to the viewport and respects iPhone safe areas.
-- Departure countdown is recalculated from the device date whenever the app is rendered, focused, or restored from the background.
-- Journal entries now immediately contribute to badge eligibility and Memories after the save debounce.
-- New cache names prevent old and new app files from being mixed.
-- Public source no longer includes a hotel confirmation number.
-
-## v0.2.1 — 2026-07-27
-
-- Added Kalispell July 31.
-- Added two-night Coeur d'Alene base August 1–3.
-- Removed Missoula/concert and Spokane Valley hotel.
-
-## v0.2.0 — 2026-07-26
-
-- Dynamic date countdown.
-- Visible version information.
-- Kootenay Lake Ferry routing.
-- Hotel-address substitutions in map links.
-
-## v0.1.x — 2026-07-26
-
-- Initial static itinerary PWA.
-- Local stays, notes, checklists, route links, and offline app shell.
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  ./.nojekyll
+8e324c4fbf9ad20762e612cd962af338ab750d5b7984c75f62aaeab9e037300a  ./CHANGELOG.md
+1ca220587ae06455464dc083b6e336d319e4352f8d03fe32f74e85d0377d8ba5  ./GITHUB_BROWSER_UPDATE.md
+55e6efee135af6f58e9888b6a5a98e7ac58b65b51b89782004dafb6337fdb8e5  ./KNOWN_ISSUES.md
+4b44fb03b982b707ae27a59e43f9923cc52642cf22f750c786d03dc070d21f86  ./MANIFEST.md
+25ba5e98447d134e9b57791f4b13cb8d164bc12f04597bf0edfff9607805aa93  ./README.md
+1837fcdcaecbb4eb03b00b931f6077fb0f520caef239ce826dfcf434e9dd1008  ./RELEASE_NOTES.md
+74a7e452aab8eee14e3b73027e2465732a3be0c26c6c24842ded7246c688513a  ./TESTING_CHECKLIST.md
+c564a176facbc688ff715efde4e352fc8b9a73c7705f7ef2f778ae32368e39e0  ./TEST_REPORT.md
+8f66c18a45ea383ae0a6042d93748001f49d7c5f7e34ea8375f79b71bdb0c309  ./WORKING_COPY_UPDATE.md
+021447b6974123005f58eb58121df183012e6241f18fabb45582ece1fe893b16  ./app.js
+55bc5fcb55a00d4cc9b767556a4de7c8de89510f1974f86df4e682dbe7ca18d2  ./icons/app-icon.svg
+c64a4d5bf4b06cdcc1966023ad4d252a81b2b9a1a2a9072f67bb2e2f987d54dd  ./icons/apple-touch-icon.png
+c840c41e2e503751479345f5160cb118266f0628d63f1544674ada9601b7782c  ./icons/favicon-32.png
+6269fe1283ca48e29c11b67666e3f09339ab98672f3b10c57702fca9ba4ed2c2  ./icons/icon-192.png
+0865ff20a793f0cf0ed75543bc450a88a71c0d38b565d0c9cf8c4647bf706ac5  ./icons/icon-512.png
+89efb5ed975301b9d08015d91efd2651d192d05bf6848c228b8944457fd1578e  ./icons/icon-maskable-512.png
+5717ebe6b9cd60ec3012e9877b2bac4d71b87d5ae7967adfdc155fda98e391f2  ./index.html
+1f066ecad80e82be3b851150fea5cbca3fdfe354c61d2161d69001032dec1436  ./manifest.webmanifest
+a0c5a7549c78616ca371841b427f71db2f119b88fcc04b50967bff5be68fb5c6  ./release-manifest.json
+c5d9fa8dfc0fc8dcfcdd6a34a94466a14f4e0cca7514547228dcaa21a7042243  ./road-data.js
+a5f53b0e1dbbcdb993122140bf41a28f0a914d8377da506ac626f443577484cd  ./service-worker.js
+6b3f7daa98effec354f339780fb897bf6c6e297bfdadad9ecb312b59f21019b8  ./start-local.bat
+442a554f31dac0689ac11741e288bc236c709f301f83ba5fcc2407cbd7475424  ./start-local.sh
+43c329737c8154a8c51083622f4634dd2de39874f618691627c3f65f1fe21467  ./styles.css
