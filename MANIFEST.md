@@ -1,22 +1,47 @@
-# Release Manifest — v0.3.0 RC2
+# Known Issues and Deferred Capabilities
 
-| Path | Purpose |
-|---|---|
-| `.nojekyll` | Prevents GitHub Pages/Jekyll processing. |
-| `index.html` | App shell, five views, mode-aware Adventure structure, dialogs, and navigation. |
-| `styles.css` | Mobile/iPad layouts plus visibly distinct Navigator and Explorer themes. |
-| `road-data.js` | Public itinerary and two complete experience packs for every travel day. |
-| `app.js` | State, rendering, mode selection, journals, observations, stays, backup, updates, and migration. |
-| `service-worker.js` | Offline shell cache and old-version cleanup. |
-| `manifest.webmanifest` | PWA identity and icons. |
-| `release-manifest.json` | Published-version check. |
-| `icons/` | App, maskable, Apple touch, favicon, and source SVG icons. |
-| `README.md` | Project overview. |
-| `RELEASE_NOTES.md` | RC2 scope and mode-differentiation details. |
-| `CHANGELOG.md` | Version history. |
-| `KNOWN_ISSUES.md` | Current limits and deferred capabilities. |
-| `TESTING_CHECKLIST.md` | Device and RC2 acceptance tests. |
-| `GITHUB_BROWSER_UPDATE.md` | Computer/browser deployment procedure. |
-| `WORKING_COPY_UPDATE.md` | iPhone/iPad deployment procedure. |
-| `TEST_REPORT.md` | Test evidence for this package. |
-| `start-local.sh` / `start-local.bat` | Local static server helpers. |
+## RC3 test focus
+
+RC3 adds inline assignment and question responses. Physical iPhone and iPad testing is still required for keyboard behaviour, long-answer layout, and Home Screen cache refresh.
+
+### 1. Per-device data only
+
+Profiles, counters, assignment responses, journals, badges, hotel confirmations, and notes remain local to the current phone, iPad, or browser. A backup copies state but does not merge two family members' entries.
+
+### 2. Photo mission stores completion only
+
+The app does not retain the actual photo yet. Photo storage, permissions, capacity, backup, and scrapbook attachment handling require a separate design.
+
+### 3. Distances are planned values
+
+Changing a hotel address updates Google/Apple Maps endpoints, but displayed kilometres and drive-time text remain the planned values in `road-data.js`.
+
+**Planned:** supported routing provider, automatic recalculation, and an explicit scenic/manual override.
+
+### 4. Live services are links
+
+Weather, roads, borders, ferries, and fuel prices are not embedded. The app provides live-check links and keeps the core itinerary available offline.
+
+### 5. GasBuddy
+
+RC3 does not call an undocumented GasBuddy interface. A later release may provide open-in-GasBuddy/search links, vehicle range, and refuelling-area guidance while reserving direct live-price integration for an approved interface.
+
+### 6. One visible Adventure
+
+The data model supports an Adventures array, but RC3 does not expose a selector or builder.
+
+### 7. Changing a profile's experience after use
+
+A profile can be switched between Navigator and Explorer in Settings. Existing entries remain stored, but each mode intentionally shows its own missions, responses, and observation list. For the cleanest scrapbook, choose a mode for each person before the trip and keep it.
+
+### 8. Assignment completion remains explicit
+
+Entering an answer does not automatically check the assignment complete. This is intentional: a prediction may be entered before the task itself is finished. The traveller should check the assignment when it is actually complete.
+
+### 9. Service-worker timing
+
+After a GitHub Pages push, the installed Home Screen app may show the prior build until deployment completes and Refresh is tapped.
+
+### 10. Browser storage
+
+Clearing Safari site data or deleting the Home Screen web app may remove local progress. Export a backup before major changes.

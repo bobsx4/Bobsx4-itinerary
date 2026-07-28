@@ -1,19 +1,104 @@
-# Update Road Companion from a Computer
+# Changelog
 
-1. In the currently installed app, open **Settings → Export backup**.
-2. Extract the RC2 ZIP on the computer.
-3. Open the `Bobsx4-itinerary` repository on GitHub and confirm the `main` branch is selected.
-4. Choose **Add file → Upload files**.
-5. Drag the **contents inside** the extracted release folder into the upload area. Do not upload the ZIP or its enclosing folder.
-6. Commit directly to `main` with:
+## v0.3.0 RC3 — 2026-07-27
 
-```text
-Road Companion v0.3.0 RC2 - distinct Navigator and Explorer experiences
-```
+### Added
 
-7. Open **Actions** and wait for the Pages deployment to show a green check.
-8. Open the live site and verify the header displays `v0.3.0 RC2`.
-9. On each installed phone or iPad, open Road Companion and tap **Refresh**.
-10. Confirm local hotel details and profile names remain present.
+- Inline response panels for assignments that require a prediction, comparison, time, number, ranking, decision, or observation.
+- 71 response-enabled assignments containing 92 structured fields across Navigator and Explorer.
+- Optional answer boxes for all 40 fact and route-intelligence prompts.
+- Text, textarea, time, number, and selected-choice response controls.
+- Automatic local saving and saved-state indicators for assignment and fact responses.
+- Assignment and question responses in the profile-specific Memories scrapbook.
 
-GitHub replaces files with matching paths. It does not create `index-2.html` or `app-3.js` duplicates when uploading through the browser.
+### Changed
+
+- Assignment cards now separate the completion checkbox from the written response.
+- Answered response panels reopen automatically when a day is revisited.
+- A response alone now marks a day as having memory content, even before the general journal is completed.
+
+### Fixed
+
+- Resolved the RC2 gap where prompts such as “record one clear change caused by elevation” had no place to record the answer.
+- Updated the offline cache and published-version metadata to RC3.
+
+## v0.3.0 RC2 — 2026-07-27
+
+### Added
+
+- Fully separate Navigator and Explorer content packs for all ten travel days.
+- Mode definitions with distinct role, icon, verbs, and visual language.
+- Navigator-specific assignments, route intelligence, Field Log observations, photo briefs, journal prompts, credentials, and next-dispatch teasers.
+- Explorer-specific missions, I-Spy Road Quest items, quick facts, photo challenges, journal prompts, badges, and tomorrow teasers.
+- Dynamic section labels, introductions, rating prompts, and mode-specific mobile ordering.
+- Mode-aware badge gallery, scrapbook labels, mission totals, and observation totals.
+
+### Changed
+
+- Explorer Road Quest now appears immediately after missions on mobile.
+- Navigator prioritizes assignments and route intelligence before the Field Log.
+- Profile cards and picker now explain what each experience actually does.
+- Adventure visuals now use indigo/navy for Navigator and teal/orange for Explorer.
+- Badge eligibility and metrics count only the active mode's visible assignments and observations.
+
+### Fixed
+
+- Resolved the RC1 issue where Navigator and Explorer appeared nearly identical.
+- Updated the offline cache and published-version metadata to RC2.
+
+## v0.3.0 RC1 — 2026-07-27
+
+### Added
+
+- Home/Mission Control dashboard.
+- Five-area navigation: Home, Trip, Adventure, Memories, Settings.
+- Adventure-based data schema with an Adventures array.
+- Two local Adventure profiles: Navigator and Explorer.
+- Locally renameable profiles and selectable experience style.
+- Profile-specific daily missions, briefings, photo prompts, and journal labels.
+- Road Quest sighting counters with per-profile storage.
+- Day ratings, field journals, daily badges, global badges, trip statistics, and scrapbook.
+- Tomorrow teaser as the last Adventure section.
+- Responsive iPhone and iPad layouts, including iPad landscape side navigation.
+- Version badge, build date, update check, and manual refresh controls.
+- Release manifest and v0.3.0 RC1 service-worker cache.
+- v0.2 local-state migration.
+- Backup/restore for the complete v3 local state.
+- Official live-check links for parks, borders, roads, ferry, Silverwood, Victoria's Secret, and Kangaroo Creek Farm.
+
+### Changed
+
+- Rebuilt the interface and data model around Road Companion rather than a single itinerary page.
+- Renamed the child-facing area to Adventure Mode.
+- Updated itinerary to Kalispell July 31 and Coeur d'Alene August 1–3.
+- Removed Missoula, the concert, and the Spokane Valley overnight.
+- Removed Cabela's from the shopping list.
+- Updated the Penticton/Clearwater day to include Kangaroo Creek Farm within the confirmed 9:00 AM–3:00 PM window.
+- Updated Sandpoint–Nelson to intentionally use the Kootenay Lake Ferry route.
+- Hotel addresses now alter the map link endpoints while displayed drive metrics remain the planned trip values.
+
+### Fixed
+
+- Bottom navigation is fixed to the viewport and respects iPhone safe areas.
+- Departure countdown is recalculated from the device date whenever the app is rendered, focused, or restored from the background.
+- Journal entries now immediately contribute to badge eligibility and Memories after the save debounce.
+- New cache names prevent old and new app files from being mixed.
+- Public source no longer includes a hotel confirmation number.
+
+## v0.2.1 — 2026-07-27
+
+- Added Kalispell July 31.
+- Added two-night Coeur d'Alene base August 1–3.
+- Removed Missoula/concert and Spokane Valley hotel.
+
+## v0.2.0 — 2026-07-26
+
+- Dynamic date countdown.
+- Visible version information.
+- Kootenay Lake Ferry routing.
+- Hotel-address substitutions in map links.
+
+## v0.1.x — 2026-07-26
+
+- Initial static itinerary PWA.
+- Local stays, notes, checklists, route links, and offline app shell.

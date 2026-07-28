@@ -1,2 +1,2 @@
-#!/bin/sh
-python3 -m http.server 8080
+@echo off
+py -m http.server 8080

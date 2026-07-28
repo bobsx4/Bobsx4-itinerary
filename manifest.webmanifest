@@ -1,18 +1,22 @@
-{
-  "name": "Bobsx4 Road Companion",
-  "short_name": "Road Companion",
-  "description": "Offline-first family travel companion, Adventure Mode, journal, badges, and scrapbook.",
-  "id": "./",
-  "start_url": "./",
-  "scope": "./",
-  "display": "standalone",
-  "orientation": "any",
-  "background_color": "#eef4f6",
-  "theme_color": "#152f45",
-  "categories": ["travel", "lifestyle", "utilities"],
-  "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-  ]
-}
+# Release Manifest — v0.3.0 RC3
+
+| Path | Purpose |
+|---|---|
+| `.nojekyll` | Prevents GitHub Pages/Jekyll processing. |
+| `index.html` | App shell, five views, mode-aware Adventure structure, dialogs, and navigation. |
+| `styles.css` | Mobile/iPad layouts, distinct modes, assignment response panels, and Memories response styling. |
+| `road-data.js` | Public itinerary, two complete experience packs, structured response fields, and stable fact IDs. |
+| `app.js` | State, rendering, assignment/fact responses, journals, observations, stays, backup, updates, and migration. |
+| `service-worker.js` | RC3 offline shell cache and old-version cleanup. |
+| `manifest.webmanifest` | PWA identity and icons. |
+| `release-manifest.json` | Published-version check. |
+| `icons/` | App, maskable, Apple touch, favicon, and source SVG icons. |
+| `README.md` | Project overview. |
+| `RELEASE_NOTES.md` | RC3 assignment-response scope. |
+| `CHANGELOG.md` | Version history. |
+| `KNOWN_ISSUES.md` | Current limits and deferred capabilities. |
+| `TESTING_CHECKLIST.md` | Device and RC3 acceptance tests. |
+| `GITHUB_BROWSER_UPDATE.md` | Computer/browser deployment procedure. |
+| `WORKING_COPY_UPDATE.md` | iPhone/iPad deployment procedure. |
+| `TEST_REPORT.md` | Test evidence for this package. |
+| `start-local.sh` / `start-local.bat` | Local static server helpers. |
