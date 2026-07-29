@@ -553,6 +553,14 @@ p { line-height: 1.55; }
 .live-check strong { display: block; font-size: 13px; }
 .live-check span { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; }
 .live-check a { min-height: 36px; padding: 7px 9px; border: 1px solid var(--line); background: white; border-radius: 10px; text-decoration: none; font-size: 11px; font-weight: 750; }
+.live-check.past { background: #f7f8fa; opacity: .82; }
+.live-check-archive { margin-top: 4px; border-top: 1px solid var(--line); padding-top: 8px; }
+.live-check-archive summary { min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--brand); font-size: 12px; font-weight: 800; cursor: pointer; list-style: none; }
+.live-check-archive summary::-webkit-details-marker { display: none; }
+.live-check-archive summary::after { content: "⌄"; margin-left: auto; color: var(--muted); font-size: 15px; transition: transform .18s ease; }
+.live-check-archive[open] summary::after { transform: rotate(180deg); }
+.live-check-archive summary small { order: 2; min-width: 24px; padding: 3px 7px; border-radius: 999px; background: var(--soft-2); color: var(--muted); text-align: center; font-size: 10px; }
+.live-check-archive-list { display: grid; gap: 9px; padding-top: 4px; }
 .version-line { color: var(--muted); font-size: 12px; margin: 12px 0 0; }
 .privacy-note { border-radius: var(--radius); padding: 17px; background: #152f45; color: white; }
 .privacy-note p { margin: 6px 0 0; color: rgba(255,255,255,.72); font-size: 12px; }

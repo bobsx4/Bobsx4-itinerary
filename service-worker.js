@@ -1,11 +1,11 @@
 const CACHE_PREFIX = "bobsx4-road-companion";
-const CACHE_NAME = `${CACHE_PREFIX}-v0.3.0-rc3-2`;
+const CACHE_NAME = `${CACHE_PREFIX}-v0.3.0-rc3-3`;
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=0.3.0-rc3-2",
-  "./road-data.js?v=0.3.0-rc3-2",
-  "./app.js?v=0.3.0-rc3-2",
+  "./styles.css?v=0.3.0-rc3-3",
+  "./road-data.js?v=0.3.0-rc3-3",
+  "./app.js?v=0.3.0-rc3-3",
   "./manifest.webmanifest",
   "./release-manifest.json",
   "./icons/app-icon.svg",

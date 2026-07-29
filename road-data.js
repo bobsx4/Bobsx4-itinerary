@@ -3,8 +3,8 @@ window.BOBSX4_DATA = {
     "id": "bobsx4-road-companion",
     "name": "Bobsx4 Road Companion",
     "shortName": "Road Companion",
-    "version": "0.3.0 RC3.2",
-    "versionCode": "0.3.0-rc3.2",
+    "version": "0.3.0 RC3.3",
+    "versionCode": "0.3.0-rc3.3",
     "buildDate": "2026-07-28",
     "dataSchema": 3,
     "tagline": "Adventure is where you are going. Road Companion is how you will remember it."
@@ -4506,98 +4506,112 @@ window.BOBSX4_DATA = {
           "title": "Glacier current conditions",
           "note": "Road, weather, trail, and park alerts. Going-to-the-Sun Road was fully open when this app was built.",
           "url": "https://www.nps.gov/glac/planyourvisit/conditions.htm",
-          "verified": "July 25, 2026"
+          "verified": "July 25, 2026",
+          "activeThrough": "2026-07-31"
         },
         {
           "id": "glacier-2026",
           "title": "Glacier 2026 access changes",
           "note": "No vehicle reservation is required in 2026; Logan Pass parking is time-limited and shuttles require reservations.",
           "url": "https://www.nps.gov/glac/planyourvisit/vehicle-reservations2026.htm",
-          "verified": "July 25, 2026"
+          "verified": "July 25, 2026",
+          "activeThrough": "2026-07-31"
         },
         {
           "id": "piegan-border",
           "title": "Piegan port of entry",
           "note": "Official CBP contact and operating hours. The published daily hours were 7:00 AM to 11:00 PM Mountain Time when checked.",
           "url": "https://www.cbp.gov/contact/ports/piegan-mt",
-          "verified": "July 25, 2026"
+          "verified": "July 25, 2026",
+          "activeThrough": "2026-07-31"
         },
         {
           "id": "porthill-border",
           "title": "Porthill U.S. port listing",
           "note": "Official U.S. port page. It listed daily hours of 7:00 AM to 7:00 PM Pacific when checked; plan to cross well before evening.",
           "url": "https://www.cbp.gov/about/contact/ports/porthill-id-idaho-3308",
-          "verified": "July 25, 2026"
+          "verified": "July 25, 2026",
+          "activeThrough": "2026-08-04"
         },
         {
           "id": "rykerts-border",
           "title": "Rykerts Canadian port listing",
           "note": "Official Canadian port page. It listed summer traveller hours of 7:00 AM to 11:00 PM Pacific when checked. Reconfirm because the paired U.S. listing showed an earlier close.",
           "url": "https://do-rb.cbsa-asfc.cloud-nuage.canada.ca/?id=545&lang=en_CA",
-          "verified": "July 25, 2026"
+          "verified": "July 25, 2026",
+          "activeThrough": "2026-08-04"
         },
         {
           "id": "silverwood-hours",
           "title": "Silverwood 2026 calendar",
           "note": "August 2 was listed as Silverwood 11:00 AM to 9:00 PM and Boulder Beach 11:00 AM to 7:00 PM when checked.",
           "url": "https://www.silverwoodthemepark.com/park/park-hours.php?Month=8&Year=2026",
-          "verified": "July 25, 2026"
+          "verified": "July 25, 2026",
+          "activeThrough": "2026-08-02"
         },
         {
           "id": "vs-store",
           "title": "Victoria's Secret Spokane Valley",
           "note": "Official store page for the Spokane Valley Mall location.",
           "url": "https://stores.victoriassecret.com/us/wa/spokanevalley/lingerie-736.html",
-          "verified": "July 25, 2026"
+          "verified": "July 25, 2026",
+          "activeThrough": "2026-08-03"
         },
         {
           "id": "drivebc",
           "title": "DriveBC",
           "note": "BC highway incidents, closures, construction, and webcams.",
           "url": "https://www.drivebc.ca/",
-          "verified": "Use live"
+          "verified": "Use live",
+          "activeThrough": "2026-08-07"
         },
         {
           "id": "511-alberta",
           "title": "511 Alberta",
           "note": "Alberta road reports and closures for the first and final legs.",
           "url": "https://511.alberta.ca/",
-          "verified": "Use live"
+          "verified": "Use live",
+          "activeThrough": "2026-08-08"
         },
         {
           "id": "montana-511",
           "title": "Montana 511",
           "note": "Montana road conditions, incidents, and construction.",
           "url": "https://www.511mt.net/",
-          "verified": "Use live"
+          "verified": "Use live",
+          "activeThrough": "2026-08-01"
         },
         {
           "id": "idaho-511",
           "title": "Idaho 511",
           "note": "Idaho road conditions and construction.",
           "url": "https://511.idaho.gov/",
-          "verified": "Use live"
+          "verified": "Use live",
+          "activeThrough": "2026-08-04"
         },
         {
           "id": "washington-511",
           "title": "Washington travel map",
           "note": "Washington road conditions for the Spokane Valley shopping leg.",
           "url": "https://wsdot.com/Travel/Real-time/Map/",
-          "verified": "Use live"
+          "verified": "Use live",
+          "activeThrough": "2026-08-03"
         },
         {
           "id": "kootenay-ferry",
           "title": "Kootenay Lake Ferry",
           "note": "Official summer schedule, crossing information, and service notices. The crossing is about 35 minutes; summer queues may add time.",
           "url": "https://www2.gov.bc.ca/gov/content/transportation/passenger-travel/water-travel/inland-ferries/kootenay-lake-ferry",
-          "verified": "July 27, 2026"
+          "verified": "July 27, 2026",
+          "activeThrough": "2026-08-05"
         },
         {
           "id": "kangaroo-farm",
           "title": "Kangaroo Creek Farm",
           "note": "Farm information and animal list. The trip plan uses the confirmed daily 9:00 AM–3:00 PM operating window; recheck before departure.",
           "url": "https://www.kangaroocreekfarm.com/",
-          "verified": "July 27, 2026"
+          "verified": "July 27, 2026",
+          "activeThrough": "2026-08-06"
         }
       ]
     }

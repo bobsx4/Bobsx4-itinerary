@@ -1002,12 +1002,19 @@
 
   function renderAdventureDayStrip(selectedId) {
     const adventure = getAdventure();
-    $("#adventure-day-strip").innerHTML = adventure.days.map((day) => {
+    const strip = $("#adventure-day-strip");
+    strip.innerHTML = adventure.days.map((day) => {
       const parts = dateParts(day.date);
       const hasMemory = dayHasMemory(getDayProgress(day.id, state.activeProfileId, false));
       return `<button class="adventure-day-button ${day.id === selectedId ? "active" : ""} ${hasMemory ? "has-memory" : ""}" type="button" role="listitem" data-action="select-adventure-day" data-day-id="${escapeHtml(day.id)}"><span>${escapeHtml(parts.month)}</span><strong>${escapeHtml(parts.day)}</strong></button>`;
     }).join("");
-    requestAnimationFrame(() => $("#adventure-day-strip .active")?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" }));
+    requestAnimationFrame(() => {
+      const active = $(".active", strip);
+      if (!active) return;
+      const targetLeft = Math.max(0, active.offsetLeft - ((strip.clientWidth - active.offsetWidth) / 2));
+      if (typeof strip.scrollTo === "function") strip.scrollTo({ left: targetLeft, behavior: "smooth" });
+      else strip.scrollLeft = targetLeft;
+    });
   }
 
   function renderRating(value) {
@@ -1150,7 +1157,23 @@
 
   function renderLiveChecks() {
     const checks = (getAdventure().liveChecks || []).filter((item) => item.id !== "concert");
-    $("#live-checks-list").innerHTML = checks.map((item) => `<article class="live-check"><div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.note)}${item.verified ? ` · ${escapeHtml(item.verified)}` : ""}</span></div><a href="${escapeHtml(item.url)}" target="_blank" rel="noopener">Open</a></article>`).join("");
+    const today = todayLocal();
+    const archived = (item) => item.activeThrough && today > parseDate(item.activeThrough);
+    const currentChecks = checks.filter((item) => !archived(item));
+    const pastChecks = checks.filter(archived);
+    const checkCard = (item, isPast = false) => {
+      const url = sanitizeUrl(item.url);
+      const timing = item.activeThrough ? `${isPast ? "Relevant through" : "Needed by"} ${formatDate(item.activeThrough, { month: "short", day: "numeric" })}` : "";
+      const meta = [item.verified, timing].filter(Boolean).map(escapeHtml).join(" · ");
+      return `<article class="live-check ${isPast ? "past" : ""}"><div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.note)}${meta ? ` · ${meta}` : ""}</span></div>${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">Open</a>` : ""}</article>`;
+    };
+    const currentHtml = currentChecks.length
+      ? currentChecks.map((item) => checkCard(item)).join("")
+      : `<p class="supporting-copy">No upcoming live checks remain.</p>`;
+    const archiveHtml = pastChecks.length
+      ? `<details class="live-check-archive"><summary><span>Past checks</span><small>${pastChecks.length}</small></summary><div class="live-check-archive-list">${pastChecks.map((item) => checkCard(item, true)).join("")}</div></details>`
+      : "";
+    $("#live-checks-list").innerHTML = `${currentHtml}${archiveHtml}`;
   }
 
   function renderAll() {

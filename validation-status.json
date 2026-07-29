@@ -1,0 +1,20 @@
+{
+  "app": "Bobsx4 Road Companion",
+  "version": "0.3.0 RC3.3",
+  "versionCode": "0.3.0-rc3.3",
+  "buildDate": "2026-07-28",
+  "baseline": "Bobsx4_Road_Companion_v0.3.0_RC2_repo-ready(1).zip",
+  "status": "release-candidate",
+  "automatedValidation": "passed",
+  "automatedChecksPassed": 51,
+  "automatedChecksFailed": 0,
+  "physicalDeviceValidation": "required",
+  "requiredToAdvance": [
+    "GitHub Pages RC3.3 deployment",
+    "Adventure action scroll preservation on iPhone and iPad",
+    "Live Check automatic archive on a physical device",
+    "offline relaunch",
+    "local RC2 state migration",
+    "Navigator and Explorer family tone review"
+  ]
+}
