@@ -3,8 +3,8 @@ window.BOBSX4_DATA = {
     "id": "bobsx4-road-companion",
     "name": "Bobsx4 Road Companion",
     "shortName": "Road Companion",
-    "version": "0.4.0 RC2",
-    "versionCode": "0.4.0-rc2",
+    "version": "0.4.0 RC2.1",
+    "versionCode": "0.4.0-rc2.1",
     "buildDate": "2026-07-30",
     "dataSchema": 5,
     "tagline": "Adventure is where you are going. Road Companion is how you will remember it."
