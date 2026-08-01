@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-  <link rel="stylesheet" href="styles.css?v=0.4.0-rc3.1">
+  <link rel="stylesheet" href="styles.css?v=0.4.0-rc3.2">
   <style id="road-companion-critical-fallback">
     [hidden] { display: none !important; }
     .asset-diagnostic {
@@ -26,7 +26,7 @@
 </head>
 <body>
   <div id="asset-diagnostic" class="asset-diagnostic" role="alert" hidden>
-    Road Companion could not load <strong>styles.css</strong>. Upload the v0.4.0 RC3.1 runtime files to the repository root, wait for Pages to deploy, then refresh.
+    Road Companion could not load <strong>styles.css</strong>. Upload the v0.4.0 RC3.2 runtime files to the repository root, wait for Pages to deploy, then refresh.
   </div>
   <a class="skip-link" href="#main-content">Skip to content</a>
 
@@ -51,7 +51,7 @@
           <span id="profile-initials" class="profile-initials">N</span>
           <span id="profile-name" class="profile-name">Navigator</span>
         </button>
-        <span class="version-badge">v<span id="header-version">0.4.0 RC3.1</span></span>
+        <span class="version-badge">v<span id="header-version">0.4.0 RC3.2</span></span>
         <span id="network-status" class="status-pill" aria-live="polite">Checking</span>
         <button id="header-sync-status" class="status-pill sync-status-pill" type="button" data-state="off" aria-label="Shared Trip sync status">Not synced</button>
         <button id="refresh-button" class="icon-button refresh-button" type="button" data-action="refresh-app" aria-label="Refresh app" title="Refresh app">
@@ -323,7 +323,7 @@
               </div>
             </div>
             <div id="sync-connected" hidden>
-              <div class="sync-identity"><span><strong id="sync-trip-name">Northwest Adventure 2026</strong><small id="sync-role-label">Family contributor</small></span></div>
+              <div class="sync-identity"><span><strong id="sync-trip-name">Northwest Adventure 2026</strong><small id="sync-role-label">Family contributor</small></span><small id="sync-people-summary"></small></div>
               <button id="sync-now-button" class="primary-button full-width" type="button">Sync now</button>
               <div id="sync-owner-tools" class="sync-owner-tools" hidden>
                 <p class="fine-print">Create a separate one-use code for each contributing device. Viewer links are read-only and never expose private journals, confirmations, or stay notes.</p>
@@ -336,6 +336,11 @@
                   <textarea id="sync-share-output" rows="3" readonly></textarea>
                   <div class="two-column-actions"><button id="sync-copy-button" class="secondary-button" type="button">Copy</button><button id="sync-share-button" class="primary-button" type="button">Share</button></div>
                 </div>
+                <section class="sync-people-card" aria-labelledby="sync-people-title">
+                  <div class="sync-people-heading"><div><span class="section-kicker">Access roster</span><h3 id="sync-people-title">People aboard</h3></div><button id="sync-people-refresh-button" class="text-button" type="button">Refresh</button></div>
+                  <p class="fine-print">A connected family contributor has redeemed a code. RC3.2 can identify active viewer links; named viewer profiles and comments arrive with RC4.</p>
+                  <div id="sync-people-list" class="sync-people-list"><p class="supporting-copy">Loading people…</p></div>
+                </section>
               </div>
             </div>
             <p id="sync-activity" class="fine-print" aria-live="polite"></p>
@@ -356,7 +361,7 @@
               <button class="primary-button" type="button" data-action="refresh-app">Refresh app now</button>
               <button class="secondary-button" type="button" data-action="check-update">Check for update</button>
             </div>
-            <p class="version-line">Version <strong id="app-version">0.4.0 RC3.1</strong> · built <span id="build-date">2026-08-01</span></p>
+            <p class="version-line">Version <strong id="app-version">0.4.0 RC3.2</strong> · built <span id="build-date">2026-08-01</span></p>
           </section>
 
           <section class="section-card" aria-labelledby="editable-itinerary-title">
@@ -648,10 +653,10 @@
       }
     });
   </script>
-  <script src="road-data.js?v=0.4.0-rc3.1"></script>
+  <script src="road-data.js?v=0.4.0-rc3.2"></script>
   <script src="vendor/supabase-client.js?v=2.111.0"></script>
-  <script src="sync-config.js?v=0.4.0-rc3.1"></script>
-  <script src="app.js?v=0.4.0-rc3.1"></script>
-  <script src="sync.js?v=0.4.0-rc3.1"></script>
+  <script src="sync-config.js?v=0.4.0-rc3.2"></script>
+  <script src="app.js?v=0.4.0-rc3.2"></script>
+  <script src="sync.js?v=0.4.0-rc3.2"></script>
 </body>
 </html>

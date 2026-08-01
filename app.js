@@ -16,6 +16,7 @@
   const VALID_EXPERIENCES = ["navigator", "explorer", "roadcrew"];
   const JOURNAL_FIELDS = ["favorite", "ate", "bought", "surprise", "note"];
   const REFRESH_EDIT_NOTICE_KEY = "bobsx4-refresh-preserved-edits";
+  const PROGRESS_FIELD_CLOCKS = "_fieldUpdatedAt";
   const DEPARTURE_SHIFT_SOURCE = "departure-shift";
   const DEPARTURE_SHIFT_FIELDS = ["arrival", "timeline"];
   const ITINERARY_FIELDS = {
@@ -160,6 +161,16 @@
 
   function touchRecord(record) {
     if (record && typeof record === "object") record.updatedAt = nowIso();
+  }
+
+  function touchProgressField(progress, fieldPath) {
+    if (!progress || typeof progress !== "object") return;
+    const updatedAt = nowIso();
+    progress.updatedAt = updatedAt;
+    if (!progress[PROGRESS_FIELD_CLOCKS] || typeof progress[PROGRESS_FIELD_CLOCKS] !== "object") {
+      progress[PROGRESS_FIELD_CLOCKS] = {};
+    }
+    if (fieldPath) progress[PROGRESS_FIELD_CLOCKS][String(fieldPath).slice(0, 240)] = updatedAt;
   }
 
   function owns(object, key) {
@@ -494,6 +505,14 @@
           prefix: "day"
         });
         next.profileId = profileId;
+        next[PROGRESS_FIELD_CLOCKS] = Object.fromEntries(
+          Object.entries(next[PROGRESS_FIELD_CLOCKS] && typeof next[PROGRESS_FIELD_CLOCKS] === "object"
+            ? next[PROGRESS_FIELD_CLOCKS]
+            : {})
+            .filter(([path, updatedAt]) => path && Number.isFinite(Date.parse(updatedAt || "")))
+            .slice(0, 400)
+            .map(([path, updatedAt]) => [String(path).slice(0, 240), new Date(Date.parse(updatedAt)).toISOString()])
+        );
         return [dayId, next];
       }));
   }
@@ -924,6 +943,7 @@
     if (!progress.factResponses || typeof progress.factResponses !== "object") progress.factResponses = {};
     if (!progress.sightings || typeof progress.sightings !== "object") progress.sightings = {};
     if (!progress.journal || typeof progress.journal !== "object") progress.journal = emptyDayProgress(dayId, profileId).journal;
+    if (!progress[PROGRESS_FIELD_CLOCKS] || typeof progress[PROGRESS_FIELD_CLOCKS] !== "object") progress[PROGRESS_FIELD_CLOCKS] = {};
     JOURNAL_FIELDS.forEach((field) => {
       if (typeof progress.journal[field] !== "string") progress.journal[field] = "";
     });
@@ -2555,11 +2575,11 @@
     showToast(`${state.profiles[profileId].name} is now active.`);
   }
 
-  function updateAdventureProgress(action, value) {
+  function updateAdventureProgress(action, fieldPath, value) {
     const day = getSelectedAdventureDay();
     const progress = getDayProgress(day.id);
     action(progress, value);
-    touchRecord(progress);
+    touchProgressField(progress, fieldPath);
     saveState();
     renderAdventure();
     renderHomeProfileProgress();
@@ -2571,7 +2591,7 @@
     const progress = getDayProgress(day.id);
     if (!progress.missionResponses[missionId] || typeof progress.missionResponses[missionId] !== "object") progress.missionResponses[missionId] = {};
     progress.missionResponses[missionId][fieldId] = value;
-    touchRecord(progress);
+    touchProgressField(progress, `missionResponses.${missionId}.${fieldId}`);
     saveState();
     const status = document.querySelector(`[data-response-status-for="${CSS.escape(missionId)}"]`);
     if (status) status.textContent = experienceLabels(experienceContent(day).experience).responseSaved;
@@ -2581,7 +2601,7 @@
     const day = getSelectedAdventureDay();
     const progress = getDayProgress(day.id);
     progress.factResponses[factId] = value;
-    touchRecord(progress);
+    touchProgressField(progress, `factResponses.${factId}`);
     saveState();
     const field = document.querySelector(`[data-fact-response-id="${CSS.escape(factId)}"]`);
     const status = field?.parentElement?.querySelector("small");
@@ -2593,7 +2613,7 @@
     const day = getSelectedAdventureDay();
     const progress = getDayProgress(day.id);
     progress.journal[field] = value;
-    touchRecord(progress);
+    touchProgressField(progress, `journal.${field}`);
     saveState();
     const status = $("#journal-save-status");
     status.textContent = "Saving…";
@@ -2613,7 +2633,7 @@
     const missions = content.missions;
     if (!badgeEligibility(day, progress, missions, content.spotting).eligible) return;
     progress.badgeClaimed = true;
-    touchRecord(progress);
+    touchProgressField(progress, "badgeClaimed");
     saveState();
     renderAdventure();
     renderHomeProfileProgress();
@@ -2811,9 +2831,9 @@
       }
       case "current-adventure-day": selectAdventureDay(getCurrentOrNextDay().id, { scroll: false }); break;
       case "select-adventure-day": selectAdventureDay(button.dataset.dayId, { scroll: false }); break;
-      case "increment-sighting": updateAdventureProgress((progress) => { progress.sightings[button.dataset.spotId] = (Number(progress.sightings[button.dataset.spotId]) || 0) + 1; }); break;
-      case "decrement-sighting": updateAdventureProgress((progress) => { progress.sightings[button.dataset.spotId] = Math.max(0, (Number(progress.sightings[button.dataset.spotId]) || 0) - 1); }); break;
-      case "set-rating": updateAdventureProgress((progress) => { progress.journal.rating = Number(button.dataset.rating) || 0; }); break;
+      case "increment-sighting": updateAdventureProgress((progress) => { progress.sightings[button.dataset.spotId] = (Number(progress.sightings[button.dataset.spotId]) || 0) + 1; }, `sightings.${button.dataset.spotId}`); break;
+      case "decrement-sighting": updateAdventureProgress((progress) => { progress.sightings[button.dataset.spotId] = Math.max(0, (Number(progress.sightings[button.dataset.spotId]) || 0) - 1); }, `sightings.${button.dataset.spotId}`); break;
+      case "set-rating": updateAdventureProgress((progress) => { progress.journal.rating = Number(button.dataset.rating) || 0; }, "journal.rating"); break;
       case "claim-day-badge": claimDayBadge(); break;
       case "delete-custom-item": {
         const listName = button.dataset.list;
@@ -2890,11 +2910,11 @@
         return;
       }
       if (target.matches("[data-mission-id]")) {
-        updateAdventureProgress((progress) => { progress.missions[target.dataset.missionId] = target.checked; });
+        updateAdventureProgress((progress) => { progress.missions[target.dataset.missionId] = target.checked; }, `missions.${target.dataset.missionId}`);
         return;
       }
       if (target.id === "photo-mission-check") {
-        updateAdventureProgress((progress) => { progress.photoDone = target.checked; });
+        updateAdventureProgress((progress) => { progress.photoDone = target.checked; }, "photoDone");
       }
     });
 

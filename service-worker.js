@@ -1,14 +1,14 @@
 const CACHE_PREFIX = "bobsx4-road-companion";
-const CACHE_NAME = `${CACHE_PREFIX}-v0.4.0-rc3.1`;
+const CACHE_NAME = `${CACHE_PREFIX}-v0.4.0-rc3.2`;
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=0.4.0-rc3.1",
-  "./road-data.js?v=0.4.0-rc3.1",
+  "./styles.css?v=0.4.0-rc3.2",
+  "./road-data.js?v=0.4.0-rc3.2",
   "./vendor/supabase-client.js?v=2.111.0",
-  "./sync-config.js?v=0.4.0-rc3.1",
-  "./app.js?v=0.4.0-rc3.1",
-  "./sync.js?v=0.4.0-rc3.1",
+  "./sync-config.js?v=0.4.0-rc3.2",
+  "./app.js?v=0.4.0-rc3.2",
+  "./sync.js?v=0.4.0-rc3.2",
   "./manifest.webmanifest",
   "./release-manifest.json",
   "./icons/app-icon.svg",

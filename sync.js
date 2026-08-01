@@ -8,12 +8,15 @@
   const viewerToken = new URLSearchParams(window.location.search).get("view")?.trim() || "";
   const $ = (selector) => document.querySelector(selector);
   const nowIso = () => new Date().toISOString();
+  const PROGRESS_FIELD_CLOCKS = "_fieldUpdatedAt";
+  const PROGRESS_FIELDS = ["missions", "missionResponses", "factResponses", "sightings", "journal", "photoDone", "badgeClaimed"];
 
   let client = null;
   let channel = null;
   let syncPromise = null;
   let detectTimer = null;
   let syncState = loadSyncState();
+  let ownerRoster = { loaded: false, members: [], invites: [], error: "" };
 
   function emptySyncState() {
     return {
@@ -59,6 +62,143 @@
       profileId: record.profileId || "",
       payload: record.payload
     }));
+  }
+
+  function clone(value) {
+    return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+  }
+
+  function valuesEqual(left, right) {
+    return JSON.stringify(canonical(left)) === JSON.stringify(canonical(right));
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function isPlainObject(value) {
+    return Boolean(value && typeof value === "object" && !Array.isArray(value));
+  }
+
+  function meaningfulProgressValue(value) {
+    if (typeof value === "string") return Boolean(value.trim());
+    if (typeof value === "number") return Number.isFinite(value) && value !== 0;
+    if (typeof value === "boolean") return value;
+    if (Array.isArray(value)) return value.length > 0;
+    if (isPlainObject(value)) return Object.values(value).some(meaningfulProgressValue);
+    return value !== null && value !== undefined;
+  }
+
+  function progressClock(progress, path, value) {
+    const explicit = validTimestamp(progress?.[PROGRESS_FIELD_CLOCKS]?.[path], "");
+    if (explicit) return explicit;
+    if (!meaningfulProgressValue(value)) return "";
+    return validTimestamp(progress?.updatedAt || progress?.createdAt, "");
+  }
+
+  function mergeProgressLeaf(localProgress, remoteProgress, path, localValue, remoteValue) {
+    const localClock = progressClock(localProgress, path, localValue);
+    const remoteClock = progressClock(remoteProgress, path, remoteValue);
+    const localTime = Date.parse(localClock || "") || 0;
+    const remoteTime = Date.parse(remoteClock || "") || 0;
+    let useLocal = false;
+    if (localTime !== remoteTime) {
+      useLocal = localTime > remoteTime;
+    } else if (!valuesEqual(localValue, remoteValue)) {
+      const localMeaningful = meaningfulProgressValue(localValue);
+      const remoteMeaningful = meaningfulProgressValue(remoteValue);
+      if (localMeaningful !== remoteMeaningful) useLocal = localMeaningful;
+      else {
+        const localRecordTime = Date.parse(localProgress?.updatedAt || localProgress?.createdAt || "") || 0;
+        const remoteRecordTime = Date.parse(remoteProgress?.updatedAt || remoteProgress?.createdAt || "") || 0;
+        useLocal = localRecordTime > remoteRecordTime;
+      }
+    }
+    return {
+      value: clone(useLocal ? localValue : remoteValue),
+      clock: useLocal ? localClock : remoteClock
+    };
+  }
+
+  function mergeProgressBranch(localProgress, remoteProgress, path, localValue, remoteValue, clocks) {
+    if (isPlainObject(localValue) || isPlainObject(remoteValue)) {
+      const result = {};
+      const keys = new Set([
+        ...Object.keys(isPlainObject(localValue) ? localValue : {}),
+        ...Object.keys(isPlainObject(remoteValue) ? remoteValue : {})
+      ]);
+      keys.forEach((key) => {
+        const childPath = path ? `${path}.${key}` : key;
+        result[key] = mergeProgressBranch(
+          localProgress,
+          remoteProgress,
+          childPath,
+          isPlainObject(localValue) ? localValue[key] : undefined,
+          isPlainObject(remoteValue) ? remoteValue[key] : undefined,
+          clocks
+        );
+      });
+      return result;
+    }
+    const merged = mergeProgressLeaf(localProgress, remoteProgress, path, localValue, remoteValue);
+    if (merged.clock) clocks[path] = merged.clock;
+    return merged.value;
+  }
+
+  function mergeProgressSyncRecord(localRecord, remoteRecord) {
+    const localProgress = localRecord?.payload?.progress || {};
+    const remoteProgress = remoteRecord?.payload?.progress || {};
+    const mergedProgress = {
+      ...clone(remoteProgress),
+      ...clone(localProgress)
+    };
+    const clocks = {};
+    PROGRESS_FIELDS.forEach((field) => {
+      mergedProgress[field] = mergeProgressBranch(
+        localProgress,
+        remoteProgress,
+        field,
+        localProgress[field],
+        remoteProgress[field],
+        clocks
+      );
+    });
+    mergedProgress[PROGRESS_FIELD_CLOCKS] = clocks;
+    const localUpdated = validTimestamp(localProgress.updatedAt || localProgress.createdAt, "");
+    const remoteUpdated = validTimestamp(remoteProgress.updatedAt || remoteProgress.createdAt, "");
+    mergedProgress.updatedAt = (Date.parse(localUpdated || "") || 0) > (Date.parse(remoteUpdated || "") || 0)
+      ? localUpdated
+      : remoteUpdated || localUpdated || nowIso();
+    mergedProgress.createdAt = localProgress.createdAt || remoteProgress.createdAt || mergedProgress.updatedAt;
+    mergedProgress.recordId = localProgress.recordId || remoteProgress.recordId || "";
+    mergedProgress.tripId = localProgress.tripId || remoteProgress.tripId || "";
+    mergedProgress.profileId = localProgress.profileId || remoteProgress.profileId || remoteRecord.profileId || "";
+    mergedProgress.originDeviceId = localProgress.originDeviceId || remoteProgress.originDeviceId || remoteRecord.originDeviceId || "";
+    return {
+      ...remoteRecord,
+      payload: {
+        ...clone(remoteRecord.payload || {}),
+        dayId: remoteRecord.payload?.dayId || localRecord.payload?.dayId,
+        progress: mergedProgress
+      }
+    };
+  }
+
+  function queueMergedRepairs(recordIds) {
+    if (!recordIds.size) return;
+    const current = currentRecordMap();
+    recordIds.forEach((recordId) => {
+      const record = current.get(recordId);
+      if (!record) return;
+      const updatedAt = nowIso();
+      syncState.meta[recordId] = { ...(syncState.meta[recordId] || {}), clientUpdatedAt: updatedAt };
+      syncState.outbox[recordId] = outboxRecord(record, updatedAt, false);
+    });
   }
 
   function currentRecordMap() {
@@ -220,6 +360,7 @@
       syncState.lastError = "";
       queueAllCurrentRecords();
       await syncNow({ force: true });
+      await loadOwnerRoster();
       bridge.showToast("Shared Trip started. This device is the owner.");
     } catch (error) {
       showFailure(friendlyError(error));
@@ -289,12 +430,17 @@
     const remoteMap = new Map(remoteRecords.map((record) => [record.recordId, record]));
     const localMap = currentRecordMap();
     const apply = [];
+    const repairRemote = new Set();
 
     remoteRecords.forEach((remote) => {
       const local = localMap.get(remote.recordId);
       const localTime = Date.parse(local?.sourceUpdatedAt || "") || 0;
       const remoteTime = Date.parse(remote.clientUpdatedAt || "") || 0;
-      if (!local || remote.isDeleted || remoteTime >= localTime) {
+      if (local && remote.recordType === "progress" && !remote.isDeleted) {
+        const merged = mergeProgressSyncRecord(local, remote);
+        if (signature(merged) !== signature(local)) apply.push(merged);
+        if (signature(merged) !== signature(remote)) repairRemote.add(remote.recordId);
+      } else if (!local || remote.isDeleted || remoteTime >= localTime) {
         apply.push(remote);
       } else {
         syncState.outbox[local.recordId] = outboxRecord(local, validTimestamp(local.sourceUpdatedAt, nowIso()), false);
@@ -308,6 +454,7 @@
 
     if (apply.length) bridge.applyRemoteSyncRecords(apply);
     baselineCurrentRecords();
+    queueMergedRepairs(repairRemote);
     currentRecordMap().forEach((local) => {
       if (remoteMap.has(local.recordId) || syncState.outbox[local.recordId]) return;
       const updatedAt = validTimestamp(local.sourceUpdatedAt, nowIso());
@@ -363,12 +510,23 @@
   async function pullRemoteRecords() {
     const remote = await fetchRemoteRecords();
     const apply = [];
+    const localMap = currentRecordMap();
+    const repairRemote = new Set();
     remote.forEach((record) => {
       if (syncState.outbox[record.recordId]) return;
       const previous = syncState.meta[record.recordId];
       const isNewerVersion = !previous?.remoteVersion || record.version > previous.remoteVersion;
       const isNewerTime = (Date.parse(record.clientUpdatedAt || "") || 0) >= (Date.parse(previous?.clientUpdatedAt || "") || 0);
-      if (isNewerVersion || isNewerTime) apply.push(record);
+      if (isNewerVersion || isNewerTime) {
+        const local = localMap.get(record.recordId);
+        if (local && record.recordType === "progress" && !record.isDeleted) {
+          const merged = mergeProgressSyncRecord(local, record);
+          if (signature(merged) !== signature(local)) apply.push(merged);
+          if (signature(merged) !== signature(record)) repairRemote.add(record.recordId);
+        } else {
+          apply.push(record);
+        }
+      }
       syncState.meta[record.recordId] = {
         clientUpdatedAt: record.clientUpdatedAt,
         remoteVersion: record.version,
@@ -377,7 +535,9 @@
     });
     if (apply.length) bridge.applyRemoteSyncRecords(apply);
     baselineCurrentRecords();
+    queueMergedRepairs(repairRemote);
     saveSyncState();
+    if (repairRemote.size) scheduleSync(120);
   }
 
   async function syncNow({ force = false } = {}) {
@@ -450,6 +610,7 @@
       output.dataset.shareRole = role;
       $("#sync-share-label").textContent = role === "viewer" ? "Read-only viewer link" : "One-use family code";
       $("#sync-share-wrap").hidden = false;
+      await loadOwnerRoster();
       bridge.showToast(role === "viewer" ? "Viewer link created." : "One-use family code created.");
     } catch (error) {
       showFailure(friendlyError(error));
@@ -497,6 +658,107 @@
     return `Synced ${hours} h ago`;
   }
 
+  function rosterDate(value) {
+    const date = new Date(value || "");
+    if (!Number.isFinite(date.getTime())) return "Date unavailable";
+    return new Intl.DateTimeFormat("en-CA", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(date);
+  }
+
+  function inviteIsActive(invite) {
+    if (!invite || invite.revoked_at) return false;
+    if ((Date.parse(invite.expires_at || "") || 0) <= Date.now()) return false;
+    return invite.max_uses === null || invite.max_uses === undefined || Number(invite.use_count || 0) < Number(invite.max_uses);
+  }
+
+  function rosterCounts() {
+    const family = ownerRoster.members.filter((member) => member.role === "family").length;
+    const viewerLinks = ownerRoster.invites.filter((invite) => invite.role === "viewer" && inviteIsActive(invite)).length;
+    const pendingFamily = ownerRoster.invites.filter((invite) => invite.role === "family" && inviteIsActive(invite)).length;
+    return { family, viewerLinks, pendingFamily };
+  }
+
+  function renderOwnerRoster() {
+    const list = $("#sync-people-list");
+    const compact = $("#sync-people-summary");
+    if (!list || !compact) return;
+    if (syncState.role !== "owner") {
+      compact.textContent = "";
+      return;
+    }
+    if (!ownerRoster.loaded) {
+      compact.textContent = "Loading people…";
+      list.innerHTML = '<p class="supporting-copy">Loading people…</p>';
+      return;
+    }
+    const counts = rosterCounts();
+    compact.textContent = [
+      `${counts.family} contributor${counts.family === 1 ? "" : "s"} connected`,
+      `${counts.viewerLinks} viewer link${counts.viewerLinks === 1 ? "" : "s"}`
+    ].join(" · ");
+    if (ownerRoster.error) {
+      list.innerHTML = `<p class="sync-error">${escapeHtml(ownerRoster.error)}</p>`;
+      return;
+    }
+    const members = [...ownerRoster.members].sort((left, right) => {
+      if (left.role !== right.role) return left.role === "owner" ? -1 : 1;
+      return String(left.joined_at || "").localeCompare(String(right.joined_at || ""));
+    });
+    const memberRows = members.map((member) => `
+      <div class="sync-person-row">
+        <span class="sync-person-copy"><strong>${escapeHtml(member.display_name || "Traveller")}</strong><small>${member.role === "owner" ? "Trip owner" : `Family contributor · joined ${escapeHtml(rosterDate(member.joined_at))}`}</small></span>
+        <span class="sync-person-state">${member.role === "owner" ? "Owner" : "Connected"}</span>
+      </div>`).join("");
+    const pendingFamily = ownerRoster.invites.filter((invite) => invite.role === "family" && inviteIsActive(invite));
+    const viewerLinks = ownerRoster.invites.filter((invite) => invite.role === "viewer" && inviteIsActive(invite));
+    const inviteRow = (invite, label) => `
+      <div class="sync-person-row">
+        <span class="sync-person-copy"><strong>${escapeHtml(label)} · …${escapeHtml(invite.token_hint || "")}</strong><small>Created ${escapeHtml(rosterDate(invite.created_at))} · expires ${escapeHtml(rosterDate(invite.expires_at))}</small></span>
+        <button class="text-button" type="button" data-revoke-invite-id="${escapeHtml(invite.id)}">Revoke</button>
+      </div>`;
+    list.innerHTML = `
+      <div class="sync-people-group"><h4>Family</h4>${memberRows || '<p class="supporting-copy">No connected family devices.</p>'}${pendingFamily.map((invite) => inviteRow(invite, "Pending family code")).join("")}</div>
+      <div class="sync-people-group"><h4>Viewers</h4>${viewerLinks.length ? viewerLinks.map((invite) => inviteRow(invite, "Active viewer link")).join("") : '<p class="supporting-copy">No active viewer links.</p>'}</div>`;
+  }
+
+  async function loadOwnerRoster() {
+    if (syncState.role !== "owner" || !syncState.tripId || !client) return;
+    try {
+      const [memberResult, inviteResult] = await Promise.all([
+        client.from("rc_trip_members")
+          .select("user_id,role,display_name,traveller_profile_id,joined_at")
+          .eq("trip_id", syncState.tripId)
+          .order("joined_at", { ascending: true }),
+        client.from("rc_trip_invites")
+          .select("id,role,token_hint,created_at,expires_at,max_uses,use_count,revoked_at")
+          .eq("trip_id", syncState.tripId)
+          .order("created_at", { ascending: false })
+      ]);
+      if (memberResult.error) throw memberResult.error;
+      if (inviteResult.error) throw inviteResult.error;
+      ownerRoster = {
+        loaded: true,
+        members: Array.isArray(memberResult.data) ? memberResult.data : [],
+        invites: Array.isArray(inviteResult.data) ? inviteResult.data : [],
+        error: ""
+      };
+    } catch (error) {
+      ownerRoster = { ...ownerRoster, loaded: true, error: friendlyError(error) };
+    }
+    renderOwnerRoster();
+  }
+
+  async function revokeRosterInvite(inviteId) {
+    if (!inviteId || syncState.role !== "owner") return;
+    try {
+      const { error } = await client.rpc("rc_revoke_invite", { p_invite_id: inviteId });
+      if (error) throw error;
+      await loadOwnerRoster();
+      bridge.showToast("Invitation revoked.");
+    } catch (error) {
+      showFailure(friendlyError(error));
+    }
+  }
+
   function renderSyncUi() {
     const card = $("#shared-sync-card");
     if (!card) return;
@@ -515,6 +777,7 @@
     $("#sync-summary").textContent = summary;
     $("#sync-error").textContent = syncState.lastError || "";
     $("#sync-error").hidden = !syncState.lastError;
+    renderOwnerRoster();
     const header = $("#header-sync-status");
     if (header) {
       header.textContent = connected ? (pending ? `${pending} waiting` : navigator.onLine ? "Synced" : "Sync offline") : "Not synced";
@@ -524,7 +787,7 @@
 
   function setBusy(busy, message = "") {
     document.body.classList.toggle("sync-busy", busy);
-    ["#sync-start-button", "#sync-join-button", "#sync-now-button", "#sync-family-invite-button", "#sync-viewer-link-button"]
+    ["#sync-start-button", "#sync-join-button", "#sync-now-button", "#sync-family-invite-button", "#sync-viewer-link-button", "#sync-people-refresh-button"]
       .forEach((selector) => { if ($(selector)) $(selector).disabled = busy; });
     if (message && $("#sync-activity")) $("#sync-activity").textContent = message;
     else if (!busy && $("#sync-activity")) $("#sync-activity").textContent = "";
@@ -572,6 +835,11 @@
     $("#sync-viewer-link-button")?.addEventListener("click", () => createInvite("viewer"));
     $("#sync-copy-button")?.addEventListener("click", copyShareOutput);
     $("#sync-share-button")?.addEventListener("click", shareOutput);
+    $("#sync-people-refresh-button")?.addEventListener("click", loadOwnerRoster);
+    $("#sync-people-list")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-revoke-invite-id]");
+      if (button) revokeRosterInvite(button.dataset.revokeInviteId);
+    });
     window.addEventListener("bobsx4:state-saved", handleStateSaved);
     window.addEventListener("online", () => { renderSyncUi(); scheduleSync(100); });
     window.addEventListener("offline", renderSyncUi);
@@ -593,6 +861,7 @@
     renderSyncUi();
     if (syncState.tripId) {
       await syncNow();
+      if (syncState.role === "owner") await loadOwnerRoster();
       setInterval(() => { if (!document.hidden) syncNow(); }, 30000);
     }
   }
