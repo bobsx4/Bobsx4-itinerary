@@ -46,6 +46,24 @@
     checkout: "hotel-checkout",
     notes: "hotel-notes"
   };
+  const PROFILE_ACCENTS = Object.freeze({
+    amber: { label: "Amber", background: "#ffe0b7", foreground: "#7a3e12" },
+    rose: { label: "Rose", background: "#ffd9e2", foreground: "#7d2940" },
+    violet: { label: "Violet", background: "#e8dcff", foreground: "#56369a" },
+    indigo: { label: "Indigo", background: "#dfe5ff", foreground: "#334b9e" },
+    blue: { label: "Blue", background: "#d5ecff", foreground: "#18577e" },
+    teal: { label: "Teal", background: "#d4f2ec", foreground: "#17665b" },
+    emerald: { label: "Emerald", background: "#d9f1dc", foreground: "#245f35" },
+    slate: { label: "Slate", background: "#e2e8ee", foreground: "#34495b" }
+  });
+  const ROAD_UPDATE_KINDS = Object.freeze({
+    departed: { label: "Departed", icon: "↗" },
+    arrived: { label: "Arrived", icon: "⌂" },
+    delayed: { label: "Delayed", icon: "◷" },
+    changed: { label: "Changed plans", icon: "↻" },
+    "great-stop": { label: "Great stop", icon: "★" },
+    note: { label: "Road note", icon: "✎" }
+  });
 
   let state = loadState();
   let itineraryFilter = "all";
@@ -58,6 +76,8 @@
   const expandedDays = new Set();
   const itineraryEditorTouchedFields = new Set();
   const itineraryEditorAutoFields = new Set();
+  let viewerFeed = null;
+  let suppressSyncNotification = false;
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -106,9 +126,24 @@
           || "Traveller",
         80
       ),
-      initials: cleanText(profile?.initials || name.slice(0, 1).toUpperCase(), 3),
-      accent: cleanText(profile?.accent || fallback.accent || (experience === "roadcrew" ? "amber" : experience === "explorer" ? "teal" : "indigo"), 20)
+      initials: cleanText(profile?.initials || fallback.initials || name.slice(0, 1).toUpperCase(), 3),
+      accent: normalizeProfileAccent(profile?.accent || fallback.accent, experience)
     };
+  }
+
+  function normalizeProfileAccent(value, experience = "roadcrew") {
+    const fallback = experience === "explorer" ? "teal" : experience === "navigator" ? "indigo" : "amber";
+    const accent = cleanText(value || fallback, 20).toLowerCase();
+    return PROFILE_ACCENTS[accent] ? accent : fallback;
+  }
+
+  function profileInitials(profile) {
+    return cleanText(profile?.initials || profile?.name?.slice(0, 1) || "?", 3).toUpperCase();
+  }
+
+  function profileAvatarStyle(profile) {
+    const accent = PROFILE_ACCENTS[normalizeProfileAccent(profile?.accent, profile?.experience)] || PROFILE_ACCENTS.amber;
+    return `--profile-bg:${accent.background};--profile-fg:${accent.foreground}`;
   }
 
   function addRecordIdentity(record, { tripId, profileId, deviceId, prefix = "record" }) {
@@ -358,7 +393,8 @@
       activeList: "shopping",
       selectedAdventureDayId: null,
       profileProgress,
-      driveLog: { stretches: [] }
+      driveLog: { stretches: [] },
+      roadUpdates: []
     };
   }
 
@@ -415,6 +451,33 @@
     normalized.startOdometer = hasStartOdometer && Number.isFinite(startOdometer) && startOdometer >= 0 ? startOdometer : "";
     normalized.endOdometer = hasEndOdometer && Number.isFinite(endOdometer) && endOdometer >= 0 ? endOdometer : "";
     normalized.notes = cleanText(stretch.notes, 500);
+    return normalized;
+  }
+
+  function normalizeRoadUpdate(update, adventure, profiles, deviceId) {
+    if (!update || typeof update !== "object") return null;
+    const profileId = profiles[update.profileId] ? update.profileId : Object.keys(profiles)[0];
+    const dayId = adventure.days.some((day) => day.id === update.dayId)
+      ? update.dayId
+      : adventure.days[0]?.id;
+    if (!profileId || !dayId) return null;
+    const normalized = addRecordIdentity({}, {
+      tripId: adventure.id,
+      profileId,
+      deviceId,
+      prefix: "road"
+    });
+    normalized.recordId = cleanId(update.recordId || update.id, "road");
+    normalized.tripId = adventure.id;
+    normalized.profileId = profileId;
+    normalized.originDeviceId = cleanId(update.originDeviceId || deviceId, "device");
+    normalized.createdAt = cleanText(update.createdAt || nowIso(), 40);
+    normalized.updatedAt = cleanText(update.updatedAt || normalized.createdAt, 40);
+    normalized.occurredAt = cleanText(update.occurredAt || normalized.createdAt, 40);
+    normalized.dayId = dayId;
+    normalized.kind = ROAD_UPDATE_KINDS[update.kind] ? update.kind : "note";
+    normalized.message = cleanText(update.message, 500);
+    normalized.profileName = cleanText(update.profileName || profiles[profileId]?.name || "Traveller", 60);
     return normalized;
   }
 
@@ -475,6 +538,9 @@
         .map((stretch) => normalizeDriveStretch(stretch, adventure, profiles, deviceId))
         .filter(Boolean)
     };
+    next.roadUpdates = (Array.isArray(saved.roadUpdates) ? saved.roadUpdates : [])
+      .map((update) => normalizeRoadUpdate(update, adventure, profiles, deviceId))
+      .filter(Boolean);
     return next;
   }
 
@@ -502,6 +568,14 @@
       normalized.id = profileId;
       next.profiles[profileId] = normalized;
     });
+
+    if (Number(saved.schema || 0) < 6
+      && next.profiles.clayton?.accent === "amber"
+      && next.profiles.crystal?.accent === "amber") {
+      next.profiles.crystal.accent = "rose";
+      next.profiles.clayton.initials = next.profiles.clayton.initials === "C" ? "Cl" : next.profiles.clayton.initials;
+      next.profiles.crystal.initials = next.profiles.crystal.initials === "C" ? "Cr" : next.profiles.crystal.initials;
+    }
 
     next.activeProfileId = next.profiles[saved.activeProfileId]
       ? saved.activeProfileId
@@ -571,10 +645,13 @@
     return buildDefaultState();
   }
 
-  function saveState() {
+  function saveState({ notifySync = true, syncReason = "change" } = {}) {
     try {
       state.schema = APP.dataSchema;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if (notifySync && !suppressSyncNotification) {
+        window.dispatchEvent(new CustomEvent("bobsx4:state-saved", { detail: { reason: syncReason } }));
+      }
     } catch (error) {
       console.error("Could not save Road Companion state", error);
       showToast("This browser could not save the latest change.");
@@ -598,7 +675,9 @@
   function getEffectiveDay(publishedDay) {
     if (!publishedDay) return null;
     const result = { ...publishedDay };
-    const overrides = getAdventureState().itineraryOverrides?.[publishedDay.id] || {};
+    const overrides = viewerFeed?.itineraryOverrides?.[publishedDay.id]
+      || getAdventureState().itineraryOverrides?.[publishedDay.id]
+      || {};
     Object.entries(ITINERARY_FIELDS).forEach(([field, definition]) => {
       const entry = overrides[field];
       if (!entry || !owns(entry, "value")) return;
@@ -1079,17 +1158,11 @@
     $("#app-version").textContent = APP.version;
     $("#build-date").textContent = APP.buildDate;
     $("#profile-name").textContent = profile.name;
-    $("#profile-initials").textContent = (profile.name || profile.initials || "?").trim().slice(0, 1).toUpperCase();
-    $("#profile-initials").style.background = profile.experience === "roadcrew"
-      ? "var(--accent-soft)"
-      : profile.experience === "explorer"
-        ? "var(--teal-soft)"
-        : "var(--indigo-soft)";
-    $("#profile-initials").style.color = profile.experience === "roadcrew"
-      ? "#98511f"
-      : profile.experience === "explorer"
-        ? "var(--teal)"
-        : "var(--indigo)";
+    const headerAvatar = $("#profile-initials");
+    const avatarAccent = PROFILE_ACCENTS[normalizeProfileAccent(profile.accent, profile.experience)];
+    headerAvatar.textContent = profileInitials(profile);
+    headerAvatar.style.setProperty("--profile-bg", avatarAccent.background);
+    headerAvatar.style.setProperty("--profile-fg", avatarAccent.foreground);
     $("#profile-button").setAttribute("aria-label", `${profile.name}, ${mode.name} mode. Choose Adventure profile`);
   }
 
@@ -1100,6 +1173,7 @@
     renderHomeStats();
     renderCountdown();
     renderNextDay();
+    renderRoadUpdates();
     renderHomeProfileProgress();
     renderReadiness();
   }
@@ -1158,6 +1232,84 @@
         <p>${escapeHtml(day.summary)}</p>
         <div class="route-meta"><span class="meta-pill">${escapeHtml(day.distanceKm)} km</span><span class="meta-pill">${escapeHtml(day.driveTime)}</span><span class="meta-pill">Night: ${escapeHtml(day.overnight)}</span>${editCount ? `<span class="meta-pill local-edit-pill">${editCount} local edit${editCount === 1 ? "" : "s"}</span>` : ""}</div>
       </article>`;
+  }
+
+  function roadUpdatesForDisplay() {
+    const updates = viewerFeed?.roadUpdates || getAdventureState().roadUpdates || [];
+    return [...updates].sort((left, right) => String(right.occurredAt || right.updatedAt).localeCompare(String(left.occurredAt || left.updatedAt)));
+  }
+
+  function formatRoadUpdateTime(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Recently";
+    return date.toLocaleString("en-CA", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    });
+  }
+
+  function renderRoadUpdates() {
+    const list = $("#road-update-list");
+    const button = $("#add-road-update-button");
+    if (!list || !button) return;
+    const updates = roadUpdatesForDisplay().slice(0, 12);
+    button.hidden = Boolean(viewerFeed);
+    $("#road-update-mode-note").textContent = viewerFeed
+      ? "Read-only updates shared by the travelling family."
+      : "Short updates sync to family devices and the read-only trip feed when Shared Trip is connected.";
+    list.innerHTML = updates.length
+      ? updates.map((update) => {
+        const kind = ROAD_UPDATE_KINDS[update.kind] || ROAD_UPDATE_KINDS.note;
+        return `<article class="road-update-item" data-update-kind="${escapeHtml(update.kind)}">
+          <span class="road-update-icon" aria-hidden="true">${escapeHtml(kind.icon)}</span>
+          <div><div class="road-update-head"><strong>${escapeHtml(kind.label)}</strong><span>${escapeHtml(formatRoadUpdateTime(update.occurredAt || update.updatedAt))}</span></div>
+          ${update.message ? `<p>${escapeHtml(update.message)}</p>` : ""}
+          <small>${escapeHtml(update.profileName || state.profiles[update.profileId]?.name || "Road crew")}</small></div>
+        </article>`;
+      }).join("")
+      : `<div class="empty-road-updates"><strong>No road updates yet</strong><span>${viewerFeed ? "Check back after the family posts from the road." : "Post Departed, Arrived, Delayed, Changed plans, a Great stop, or a short note."}</span></div>`;
+  }
+
+  function openRoadUpdateDialog() {
+    const profile = getProfile();
+    const day = getCurrentOrNextDay();
+    $("#road-update-kind").value = "note";
+    $("#road-update-message").value = "";
+    $("#road-update-day-id").value = day.id;
+    $("#road-update-author").textContent = `${profile.name} · ${day.shortDate}`;
+    $("#road-update-dialog").showModal();
+    requestAnimationFrame(() => $("#road-update-kind")?.focus());
+  }
+
+  function saveRoadUpdate(event) {
+    event.preventDefault();
+    const adventure = getPublishedAdventure();
+    const adventureState = getAdventureState();
+    const profile = getProfile();
+    const update = normalizeRoadUpdate({
+      recordId: makeId("road"),
+      tripId: adventure.id,
+      dayId: $("#road-update-day-id").value,
+      profileId: profile.id,
+      profileName: profile.name,
+      kind: $("#road-update-kind").value,
+      message: $("#road-update-message").value,
+      occurredAt: nowIso(),
+      createdAt: nowIso(),
+      updatedAt: nowIso(),
+      originDeviceId: state.deviceId
+    }, adventure, state.profiles, state.deviceId);
+    if (!update) {
+      showToast("That road update could not be saved.");
+      return;
+    }
+    adventureState.roadUpdates.push(update);
+    saveState();
+    $("#road-update-dialog").close();
+    renderRoadUpdates();
+    showToast(navigator.onLine ? "Road update saved and queued for sync." : "Road update saved offline. It will sync later.");
   }
 
   function getDriveLog() {
@@ -1304,7 +1456,7 @@
       const percent = Math.round((completedDays / Math.max(1, getAdventure().days.length)) * 100);
       $("#profile-progress").innerHTML = `
         <div class="profile-progress-card">
-          <div class="profile-progress-avatar roadcrew-avatar">${escapeHtml((profile.name || "?").slice(0,1).toUpperCase())}</div>
+          <div class="profile-progress-avatar roadcrew-avatar" style="${profileAvatarStyle(profile)}">${escapeHtml(profileInitials(profile))}</div>
           <div class="profile-progress-copy"><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(profile.roleLabel || "Driver and journey keeper")}</span><div class="mini-progress roadcrew-progress"><i style="width:${percent}%"></i></div><span>${metrics.journals} reflection day${metrics.journals === 1 ? "" : "s"} · ${metrics.driverStretches} driving stretch${metrics.driverStretches === 1 ? "" : "es"}${metrics.drivenKm ? ` · ${metrics.drivenKm.toLocaleString("en-CA")} km` : ""}</span></div>
         </div>`;
       return;
@@ -1314,7 +1466,7 @@
     const percent = totalBadges ? Math.round((earned / totalBadges) * 100) : 0;
     $("#profile-progress").innerHTML = `
       <div class="profile-progress-card">
-        <div class="profile-progress-avatar">${escapeHtml((profile.name || "?").slice(0,1).toUpperCase())}</div>
+        <div class="profile-progress-avatar" style="${profileAvatarStyle(profile)}">${escapeHtml(profileInitials(profile))}</div>
         <div class="profile-progress-copy"><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(profile.roleLabel || (profile.experience === "navigator" ? "Independent traveller" : "Visual explorer"))}</span><div class="mini-progress"><i style="width:${percent}%"></i></div><span>${earned} of ${totalBadges} badges · ${metrics.sightings} sightings</span></div>
       </div>`;
   }
@@ -1831,8 +1983,8 @@
     const card = (profile, picker = false) => {
       const mode = experienceDefinition(profile);
       return picker
-        ? `<button class="profile-pick-button" type="button" data-action="select-profile" data-profile-id="${escapeHtml(profile.id)}"><span class="profile-avatar">${escapeHtml((profile.name || "?").slice(0,1).toUpperCase())}</span><span><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(`${mode.name}: ${mode.role}`)}</span><small>${escapeHtml(mode.description)}</small></span></button>`
-        : `<article class="profile-card ${profile.id === state.activeProfileId ? "active" : ""}" data-experience="${escapeHtml(profile.experience)}"><span class="profile-avatar">${escapeHtml((profile.name || "?").slice(0,1).toUpperCase())}</span><div><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(`${mode.name} · ${mode.role}`)}</span><small>${escapeHtml(mode.verbs)}</small></div><div class="profile-card-actions"><button type="button" data-action="select-profile" data-profile-id="${escapeHtml(profile.id)}">Use</button><button type="button" data-action="edit-profile" data-profile-id="${escapeHtml(profile.id)}">Edit</button></div></article>`;
+        ? `<button class="profile-pick-button" type="button" data-action="select-profile" data-profile-id="${escapeHtml(profile.id)}"><span class="profile-avatar" style="${profileAvatarStyle(profile)}">${escapeHtml(profileInitials(profile))}</span><span><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(`${mode.name}: ${mode.role}`)}</span><small>${escapeHtml(mode.description)}</small></span></button>`
+        : `<article class="profile-card ${profile.id === state.activeProfileId ? "active" : ""}" data-experience="${escapeHtml(profile.experience)}"><span class="profile-avatar" style="${profileAvatarStyle(profile)}">${escapeHtml(profileInitials(profile))}</span><div><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(`${mode.name} · ${mode.role}`)}</span><small>${escapeHtml(mode.verbs)}</small></div><div class="profile-card-actions"><button type="button" data-action="select-profile" data-profile-id="${escapeHtml(profile.id)}">Use</button><button type="button" data-action="edit-profile" data-profile-id="${escapeHtml(profile.id)}">Edit</button></div></article>`;
     };
     $("#profile-list").innerHTML = profiles.map((profile) => card(profile)).join("");
     $("#profile-picker-list").innerHTML = profiles.map((profile) => card(profile, true)).join("");
@@ -2000,7 +2152,7 @@
     });
     Object.keys(ITINERARY_FIELDS).forEach((field) => setItineraryInputValue(field, day[field]));
     $("#itinerary-private-note").value = getAdventureState().notes?.daily?.[dayId] || "";
-    $("#itinerary-editor-status").textContent = "Local edits stay on this device and are included in backups. Changing an exact departure time shifts unedited clock times in Arrival and Day plan.";
+    $("#itinerary-editor-status").textContent = "Edits save locally first, join Shared Trip sync when connected, and remain included in backups. Changing an exact departure time shifts unedited clock times in Arrival and Day plan.";
     updateAllItineraryFieldMarkers();
     $("#itinerary-dialog").showModal();
   }
@@ -2218,6 +2370,8 @@
     $("#profile-dialog-title").textContent = `Edit ${profile.name}`;
     $("#profile-id").value = profileId;
     $("#profile-display-name").value = profile.name;
+    $("#profile-custom-initials").value = profileInitials(profile);
+    renderProfileAccentOptions(profile.accent);
     $$('input[name="experience"]', $("#profile-form")).forEach((input) => { input.checked = input.value === profile.experience; });
     $("#profile-dialog").showModal();
   }
@@ -2227,6 +2381,8 @@
     $("#profile-dialog-title").textContent = "Add traveller";
     $("#profile-id").value = "";
     $("#profile-display-name").value = "";
+    $("#profile-custom-initials").value = "";
+    renderProfileAccentOptions("amber");
     $$('input[name="experience"]', $("#profile-form")).forEach((input) => { input.checked = input.value === "roadcrew"; });
     $("#profile-dialog").showModal();
     requestAnimationFrame(() => $("#profile-display-name")?.focus());
@@ -2241,6 +2397,8 @@
     }
     const requestedExperience = $('input[name="experience"]:checked', $("#profile-form"))?.value || "roadcrew";
     const experience = normalizeExperience(requestedExperience, "roadcrew");
+    const initials = cleanText($("#profile-custom-initials").value || name.slice(0, 1), 3).toUpperCase();
+    const accent = normalizeProfileAccent($('input[name="profile-accent"]:checked', $("#profile-form"))?.value, experience);
     let profileId = $("#profile-id").value;
     let profile = state.profiles[profileId];
     if (profileDialogMode === "add" || !profile) {
@@ -2249,7 +2407,8 @@
         id: profileId,
         name,
         experience,
-        initials: name.slice(0, 1).toUpperCase()
+        initials,
+        accent
       });
       state.profiles[profileId] = profile;
       Object.values(state.adventures).forEach((adventureState) => {
@@ -2259,14 +2418,28 @@
     } else {
       profile.name = name;
       profile.experience = experience;
-      profile.initials = name.slice(0, 1).toUpperCase();
+      profile.initials = initials;
+      profile.accent = accent;
     }
     profile.roleLabel = experienceDefinition(profile).role;
+    touchRecord(profile);
     saveState();
     $("#profile-dialog").close();
     renderAll();
     showToast(profileDialogMode === "add" ? `${profile.name} added.` : "Adventure profile updated.");
     profileDialogMode = "edit";
+  }
+
+  function renderProfileAccentOptions(selected = "amber") {
+    const container = $("#profile-accent-options");
+    if (!container) return;
+    const active = normalizeProfileAccent(selected);
+    container.innerHTML = Object.entries(PROFILE_ACCENTS).map(([id, accent]) => `
+      <label class="profile-colour-choice" title="${escapeHtml(accent.label)}">
+        <input type="radio" name="profile-accent" value="${escapeHtml(id)}" ${id === active ? "checked" : ""}>
+        <span style="--swatch-bg:${accent.background};--swatch-fg:${accent.foreground}" aria-hidden="true">A</span>
+        <small>${escapeHtml(accent.label)}</small>
+      </label>`).join("");
   }
 
   function findDriveStretch(recordId) {
@@ -2303,7 +2476,7 @@
     $("#drive-notes").value = stretch?.notes || "";
     $("#drive-dialog-status").textContent = changeDriver
       ? "The previous stretch stays intact. Complete or edit it separately if its ending details are missing."
-      : "Times and odometers are optional. The log is shared by every profile on this device.";
+      : "Times and odometers are optional. The log is shared by every local profile and syncs to connected family devices.";
     $("#drive-dialog").showModal();
   }
 
@@ -2476,7 +2649,7 @@
       const incoming = payload.state || payload;
       if (!incoming || typeof incoming !== "object") throw new Error("No state object");
       state = mergeState(incoming);
-      saveState();
+      saveState({ syncReason: "local-replace" });
       renderAll();
       showToast("Backup restored.");
     } catch (error) {
@@ -2591,6 +2764,8 @@
       case "open-stays": setView("trip"); setTripTab("stays"); break;
       case "open-lists": setView("trip"); setTripTab("lists"); break;
       case "open-memories": setView("memories"); break;
+      case "add-road-update": openRoadUpdateDialog(); break;
+      case "close-road-update-dialog": $("#road-update-dialog").close(); break;
       case "refresh-app": refreshApp(); break;
       case "check-update": checkForUpdate(); break;
       case "print-trip": window.print(); break;
@@ -2666,7 +2841,7 @@
         if (window.confirm("Reset all local Road Companion data on this device? This removes itinerary edits, stay details, private notes, profiles, journals, driving stretches, tallies, badges, and checklists.")) {
           localStorage.removeItem(STORAGE_KEY);
           state = buildDefaultState();
-          saveState();
+          saveState({ syncReason: "local-replace" });
           renderAll();
           showToast("Local data reset.");
         }
@@ -2764,6 +2939,7 @@
     $("#hotel-form").addEventListener("submit", saveHotel);
     $("#profile-form").addEventListener("submit", saveProfile);
     $("#drive-form").addEventListener("submit", saveDriveStretch);
+    $("#road-update-form").addEventListener("submit", saveRoadUpdate);
     $("#custom-item-form").addEventListener("submit", (event) => {
       event.preventDefault();
       const input = $("#custom-item-input");
@@ -2794,6 +2970,165 @@
       if (!document.hidden) { renderCountdown(); renderNextDay(); }
     });
   }
+
+  function syncRecordsFromState() {
+    const adventure = getPublishedAdventure();
+    const adventureState = getAdventureState();
+    const records = [];
+    Object.values(state.profiles).forEach((profile) => {
+      records.push({
+        recordId: `profile::${profile.id}`,
+        recordType: "profile",
+        visibility: "family",
+        profileId: profile.id,
+        payload: clone(profile),
+        sourceUpdatedAt: profile.updatedAt || "",
+        originDeviceId: profile.originDeviceId || state.deviceId
+      });
+    });
+    Object.entries(adventureState.itineraryOverrides || {}).forEach(([dayId, overrides]) => {
+      records.push({
+        recordId: `itinerary::${dayId}`,
+        recordType: "itinerary",
+        visibility: "public",
+        profileId: state.activeProfileId,
+        payload: { dayId, overrides: clone(overrides) },
+        sourceUpdatedAt: "",
+        originDeviceId: state.deviceId
+      });
+    });
+    (adventureState.driveLog?.stretches || []).forEach((stretch) => {
+      records.push({
+        recordId: `drive::${stretch.recordId}`,
+        recordType: "drive",
+        visibility: "family",
+        profileId: stretch.profileId || stretch.driverId,
+        payload: clone(stretch),
+        sourceUpdatedAt: stretch.updatedAt || stretch.createdAt || "",
+        originDeviceId: stretch.originDeviceId || state.deviceId
+      });
+    });
+    Object.entries(adventureState.profileProgress || {}).forEach(([profileId, progress]) => {
+      Object.entries(progress?.days || {}).forEach(([dayId, dayProgress]) => {
+        records.push({
+          recordId: `progress::${profileId}::${dayId}`,
+          recordType: "progress",
+          visibility: "family",
+          profileId,
+          payload: { dayId, progress: clone(dayProgress) },
+          sourceUpdatedAt: dayProgress.updatedAt || dayProgress.createdAt || "",
+          originDeviceId: dayProgress.originDeviceId || state.deviceId
+        });
+      });
+    });
+    (adventureState.roadUpdates || []).forEach((update) => {
+      records.push({
+        recordId: `road_update::${update.recordId}`,
+        recordType: "road_update",
+        visibility: "public",
+        profileId: update.profileId,
+        payload: clone(update),
+        sourceUpdatedAt: update.updatedAt || update.createdAt || "",
+        originDeviceId: update.originDeviceId || state.deviceId
+      });
+    });
+    return { adventureId: adventure.id, deviceId: state.deviceId, records };
+  }
+
+  function applyRemoteSyncRecords(records) {
+    if (!Array.isArray(records) || !records.length) return;
+    const adventure = getPublishedAdventure();
+    const adventureState = getAdventureState();
+    suppressSyncNotification = true;
+    try {
+      records.forEach((record) => {
+        if (!record || typeof record !== "object") return;
+        const payload = record.payload && typeof record.payload === "object" ? record.payload : {};
+        const parts = String(record.recordId || "").split("::");
+        if (record.isDeleted) {
+          if (record.recordType === "road_update") {
+            adventureState.roadUpdates = adventureState.roadUpdates.filter((item) => item.recordId !== parts[1]);
+          } else if (record.recordType === "drive") {
+            adventureState.driveLog.stretches = adventureState.driveLog.stretches.filter((item) => item.recordId !== parts[1]);
+          } else if (record.recordType === "itinerary") {
+            delete adventureState.itineraryOverrides[parts[1]];
+          } else if (record.recordType === "progress") {
+            const profileId = parts[1];
+            const dayId = parts[2];
+            if (adventureState.profileProgress[profileId]?.days) delete adventureState.profileProgress[profileId].days[dayId];
+          } else if (record.recordType === "profile" && !DATA.defaultProfiles.some((profile) => profile.id === parts[1])) {
+            delete state.profiles[parts[1]];
+            delete adventureState.profileProgress[parts[1]];
+          }
+          return;
+        }
+
+        if (record.recordType === "profile") {
+          const profile = normalizeProfile(payload);
+          if (!profile.id) return;
+          state.profiles[profile.id] = profile;
+          if (!adventureState.profileProgress[profile.id]) adventureState.profileProgress[profile.id] = makeProfileProgress();
+        } else if (record.recordType === "drive") {
+          const stretch = normalizeDriveStretch(payload, adventure, state.profiles, state.deviceId);
+          if (!stretch) return;
+          adventureState.driveLog.stretches = adventureState.driveLog.stretches.filter((item) => item.recordId !== stretch.recordId);
+          adventureState.driveLog.stretches.push(stretch);
+        } else if (record.recordType === "itinerary") {
+          const dayId = payload.dayId || parts[1];
+          const normalized = normalizeItineraryOverrides({ [dayId]: payload.overrides }, adventure)[dayId];
+          if (normalized && Object.keys(normalized).length) adventureState.itineraryOverrides[dayId] = normalized;
+          else delete adventureState.itineraryOverrides[dayId];
+        } else if (record.recordType === "progress") {
+          const profileId = record.profileId || parts[1];
+          const dayId = payload.dayId || parts[2];
+          if (!state.profiles[profileId] || !dayId) return;
+          if (!adventureState.profileProgress[profileId]) adventureState.profileProgress[profileId] = makeProfileProgress();
+          const normalized = normalizeDayProgressRecords({ [dayId]: payload.progress }, adventure, profileId, state.deviceId)[dayId];
+          if (normalized) adventureState.profileProgress[profileId].days[dayId] = normalized;
+        } else if (record.recordType === "road_update") {
+          const update = normalizeRoadUpdate(payload, adventure, state.profiles, state.deviceId);
+          if (!update) return;
+          adventureState.roadUpdates = adventureState.roadUpdates.filter((item) => item.recordId !== update.recordId);
+          adventureState.roadUpdates.push(update);
+        }
+      });
+      saveState({ notifySync: false });
+      renderAll();
+    } finally {
+      suppressSyncNotification = false;
+    }
+  }
+
+  function setViewerFeed(feed) {
+    const records = Array.isArray(feed?.records) ? feed.records : [];
+    const adventure = getPublishedAdventure();
+    const roadUpdates = records
+      .filter((record) => record.recordType === "road_update")
+      .map((record) => normalizeRoadUpdate(record.payload, adventure, state.profiles, state.deviceId))
+      .filter(Boolean);
+    const itineraryOverrides = {};
+    records.filter((record) => record.recordType === "itinerary").forEach((record) => {
+      const dayId = record.payload?.dayId;
+      if (!dayId) return;
+      const normalized = normalizeItineraryOverrides({ [dayId]: record.payload?.overrides }, adventure)[dayId];
+      if (normalized) itineraryOverrides[dayId] = normalized;
+    });
+    viewerFeed = { name: cleanText(feed?.name || adventure.title, 120), roadUpdates, itineraryOverrides };
+    document.body.classList.add("viewer-mode");
+    const label = $("#viewer-trip-name");
+    if (label) label.textContent = viewerFeed.name;
+    renderAll();
+  }
+
+  window.Bobsx4RoadCompanion = Object.freeze({
+    app: Object.freeze({ id: APP.id, version: APP.version }),
+    getActiveProfile: () => clone(getProfile()),
+    getAdventure: () => clone(getPublishedAdventure()),
+    getSyncRecords: () => clone(syncRecordsFromState()),
+    applyRemoteSyncRecords,
+    setViewerFeed,
+    showToast
+  });
 
   function init() {
     bindEvents();

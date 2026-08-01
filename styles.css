@@ -164,8 +164,8 @@ img, svg { display: block; max-width: 100%; }
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--indigo-soft);
-  color: var(--indigo);
+  background: var(--profile-bg, var(--indigo-soft));
+  color: var(--profile-fg, var(--indigo));
   font-weight: 850;
   flex: 0 0 auto;
 }
@@ -306,7 +306,7 @@ p { line-height: 1.55; }
 .route-meta { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
 .meta-pill { display: inline-flex; align-items: center; min-height: 28px; padding: 5px 8px; border-radius: 999px; background: white; border: 1px solid var(--line); color: var(--muted); font-size: 11px; font-weight: 700; }
 .profile-progress-card { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; }
-.profile-progress-avatar { width: 54px; height: 54px; border-radius: 18px; display: grid; place-items: center; background: var(--indigo-soft); color: var(--indigo); font-size: 23px; font-weight: 900; }
+.profile-progress-avatar { width: 54px; height: 54px; border-radius: 18px; display: grid; place-items: center; background: var(--profile-bg, var(--indigo-soft)); color: var(--profile-fg, var(--indigo)); font-size: 20px; font-weight: 900; }
 .profile-progress-copy strong { display: block; }
 .profile-progress-copy span { display: block; color: var(--muted); font-size: 12px; margin-top: 3px; }
 .mini-progress { height: 6px; background: var(--soft); border-radius: 99px; overflow: hidden; margin-top: 9px; }
@@ -636,9 +636,7 @@ p { line-height: 1.55; }
 .profile-list + .secondary-button { margin-top: 10px; }
 .profile-card { display: grid; grid-template-columns: 48px 1fr auto; gap: 10px; align-items: center; padding: 11px; border: 1px solid var(--line); border-radius: 14px; background: var(--soft-2); }
 .profile-card.active { border-color: #b6c0ed; box-shadow: 0 0 0 3px rgba(75,88,167,.08); }
-.profile-avatar { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; background: var(--indigo-soft); color: var(--indigo); font-weight: 900; font-size: 19px; }
-.profile-card[data-experience="explorer"] .profile-avatar { background: var(--teal-soft); color: var(--teal); }
-.profile-card[data-experience="roadcrew"] .profile-avatar { background: var(--accent-soft); color: #98511f; }
+.profile-avatar { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; background: var(--profile-bg, var(--indigo-soft)); color: var(--profile-fg, var(--indigo)); font-weight: 900; font-size: 17px; }
 .profile-card strong { display: block; }
 .profile-card span { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; }
 .profile-card-actions { display: flex; gap: 5px; }
@@ -659,6 +657,93 @@ p { line-height: 1.55; }
 .version-line { color: var(--muted); font-size: 12px; margin: 12px 0 0; }
 .privacy-note { border-radius: var(--radius); padding: 17px; background: #152f45; color: white; }
 .privacy-note p { margin: 6px 0 0; color: rgba(255,255,255,.72); font-size: 12px; }
+
+/* v0.4.0 RC3 — private Shared Trip sync, road feed, and profile colours */
+.sync-status-pill {
+  appearance: none;
+  cursor: pointer;
+}
+.sync-status-pill[data-state="synced"] { background: var(--success-soft); color: var(--success); border-color: #cbe5d5; }
+.sync-status-pill[data-state="waiting"] { background: var(--warning-soft); color: var(--warning); border-color: #eddcae; }
+.sync-status-pill[data-state="offline"] { background: var(--soft); color: var(--muted); }
+.sync-status-pill[data-state="viewer"] { background: #e9e8fb; color: #514791; border-color: #d6d1f0; }
+
+.viewer-notice {
+  display: none;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid #d6d1f0;
+  border-radius: 14px;
+  background: #f2f0ff;
+  color: #514791;
+}
+.viewer-notice span { display: block; font-size: 12px; }
+.viewer-mode .viewer-notice { display: grid; }
+
+.road-update-card { margin-top: 14px; }
+.compact-button { min-height: 38px; padding: 8px 11px; white-space: nowrap; }
+.road-update-list { display: grid; gap: 9px; }
+.road-update-item {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--soft-2);
+}
+.road-update-icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 13px; background: var(--accent-soft); color: #8b4a1f; font-size: 18px; font-weight: 900; }
+.road-update-item[data-update-kind="arrived"] .road-update-icon { background: var(--success-soft); color: var(--success); }
+.road-update-item[data-update-kind="delayed"] .road-update-icon { background: var(--warning-soft); color: var(--warning); }
+.road-update-head { display: flex; justify-content: space-between; gap: 8px; }
+.road-update-head span, .road-update-item small { color: var(--muted); font-size: 10px; }
+.road-update-item p { margin: 5px 0; color: #40505f; font-size: 12px; line-height: 1.4; white-space: pre-wrap; }
+.empty-road-updates { display: grid; gap: 4px; padding: 15px; border: 1px dashed #cbd7de; border-radius: 14px; color: var(--muted); font-size: 12px; }
+.empty-road-updates strong { color: var(--ink); }
+
+.shared-sync-card { grid-column: 1 / -1; }
+.shared-sync-card input, .sync-share-wrap textarea {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #cfd9df;
+  border-radius: 12px;
+  background: white;
+  color: var(--ink);
+  padding: 11px 12px;
+  font: inherit;
+}
+.sync-identity { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 12px; padding: 12px; border-radius: 13px; background: var(--success-soft); color: var(--success); }
+.sync-identity strong, .sync-identity small { display: block; }
+.sync-identity small { margin-top: 3px; font-size: 11px; }
+.sync-owner-tools { display: grid; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.two-column-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.sync-share-wrap { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--soft-2); }
+.sync-share-wrap textarea { resize: vertical; font-size: 12px; line-height: 1.4; }
+.sync-error { margin: 10px 0 0; padding: 10px; border-radius: 11px; background: var(--danger-soft); color: var(--danger); font-size: 12px; }
+.sync-busy .sync-status-pill { opacity: .72; }
+
+.profile-colour-fieldset { border: 0; padding: 0; margin: 0; }
+.profile-colour-fieldset legend { margin-bottom: 8px; color: #344556; font-size: 12px; font-weight: 750; }
+.profile-accent-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.profile-colour-choice { position: relative; display: grid !important; justify-items: center; gap: 4px !important; padding: 7px 3px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft-2); cursor: pointer; }
+.profile-colour-choice input { position: absolute; opacity: 0; pointer-events: none; }
+.profile-colour-choice span { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--swatch-bg); color: var(--swatch-fg); font-weight: 900; }
+.profile-colour-choice small { color: var(--muted); font-size: 9px; }
+.profile-colour-choice:has(input:checked) { border-color: var(--brand-2); box-shadow: 0 0 0 2px rgba(36,91,120,.12); background: white; }
+
+.viewer-mode #profile-button,
+.viewer-mode [data-nav="adventure"],
+.viewer-mode [data-nav="memories"],
+.viewer-mode [data-nav="settings"],
+.viewer-mode [data-action="edit-current-itinerary-day"],
+.viewer-mode [data-action="edit-itinerary-day"],
+.viewer-mode [data-action="edit-hotel"],
+.viewer-mode [data-trip-tab="stays"],
+.viewer-mode [data-trip-tab="lists"] { display: none !important; }
+.viewer-mode .bottom-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.viewer-mode .section-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
 .bottom-nav {
   position: fixed;
@@ -1127,6 +1212,11 @@ p { line-height: 1.55; }
 @media (max-width: 520px) {
   .mission-response { margin-left: 0; }
   .mission-response summary small { max-width: 110px; }
+  #network-status { display: none; }
+  .sync-status-pill { max-width: 74px; overflow: hidden; text-overflow: ellipsis; }
+  .profile-accent-options { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .road-update-card .section-heading { align-items: center; }
+  .road-update-card .section-intro { display: none; }
 }
 
 /* v0.4.0 RC1 — local, refresh-safe itinerary editing */

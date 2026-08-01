@@ -3,10 +3,10 @@ window.BOBSX4_DATA = {
     "id": "bobsx4-road-companion",
     "name": "Bobsx4 Road Companion",
     "shortName": "Road Companion",
-    "version": "0.4.0 RC2.1",
-    "versionCode": "0.4.0-rc2.1",
-    "buildDate": "2026-07-30",
-    "dataSchema": 5,
+    "version": "0.4.0 RC3",
+    "versionCode": "0.4.0-rc3",
+    "buildDate": "2026-07-31",
+    "dataSchema": 6,
     "tagline": "Adventure is where you are going. Road Companion is how you will remember it."
   },
   "defaultProfiles": [
@@ -15,7 +15,7 @@ window.BOBSX4_DATA = {
       "name": "Madi",
       "experience": "navigator",
       "roleLabel": "Co-pilot and field reporter",
-      "initials": "N",
+      "initials": "M",
       "accent": "indigo"
     },
     {
@@ -23,7 +23,7 @@ window.BOBSX4_DATA = {
       "name": "Hallie",
       "experience": "explorer",
       "roleLabel": "Spotter and adventure collector",
-      "initials": "E",
+      "initials": "H",
       "accent": "teal"
     },
     {
@@ -31,7 +31,7 @@ window.BOBSX4_DATA = {
       "name": "Clayton",
       "experience": "roadcrew",
       "roleLabel": "Driver and journey keeper",
-      "initials": "C",
+      "initials": "Cl",
       "accent": "amber"
     },
     {
@@ -39,8 +39,8 @@ window.BOBSX4_DATA = {
       "name": "Crystal",
       "experience": "roadcrew",
       "roleLabel": "Driver and journey keeper",
-      "initials": "C",
-      "accent": "amber"
+      "initials": "Cr",
+      "accent": "rose"
     }
   ],
   "globalBadges": [

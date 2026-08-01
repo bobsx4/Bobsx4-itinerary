@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-  <link rel="stylesheet" href="styles.css?v=0.4.0-rc2.1">
+  <link rel="stylesheet" href="styles.css?v=0.4.0-rc3">
   <style id="road-companion-critical-fallback">
     [hidden] { display: none !important; }
     .asset-diagnostic {
@@ -26,7 +26,7 @@
 </head>
 <body>
   <div id="asset-diagnostic" class="asset-diagnostic" role="alert" hidden>
-    Road Companion could not load <strong>styles.css</strong>. Upload the v0.4.0 RC2.1 runtime files to the repository root, wait for Pages to deploy, then refresh.
+    Road Companion could not load <strong>styles.css</strong>. Upload the v0.4.0 RC3 runtime files to the repository root, wait for Pages to deploy, then refresh.
   </div>
   <a class="skip-link" href="#main-content">Skip to content</a>
 
@@ -51,8 +51,9 @@
           <span id="profile-initials" class="profile-initials">N</span>
           <span id="profile-name" class="profile-name">Navigator</span>
         </button>
-        <span class="version-badge">v<span id="header-version">0.4.0 RC2.1</span></span>
+        <span class="version-badge">v<span id="header-version">0.4.0 RC3</span></span>
         <span id="network-status" class="status-pill" aria-live="polite">Checking</span>
+        <button id="header-sync-status" class="status-pill sync-status-pill" type="button" data-state="off" aria-label="Shared Trip sync status">Not synced</button>
         <button id="refresh-button" class="icon-button refresh-button" type="button" data-action="refresh-app" aria-label="Refresh app" title="Refresh app">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6.1 8.4A7 7 0 0 1 18.5 7M17.9 15.6A7 7 0 0 1 5.5 17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
         </button>
@@ -64,6 +65,11 @@
 
     <main id="main-content" tabindex="-1">
       <section id="view-home" class="view active" data-view="home" aria-labelledby="home-title">
+        <aside id="viewer-notice" class="viewer-notice" aria-live="polite">
+          <strong>Read-only trip view</strong>
+          <span id="viewer-trip-name">Bobsx4 Road Companion</span>
+          <span id="viewer-error" hidden></span>
+        </aside>
         <div class="hero-card home-hero">
           <div class="hero-copy">
             <span id="trip-state-label" class="hero-kicker">Loading adventure</span>
@@ -79,6 +85,14 @@
         </div>
 
         <div id="countdown-card" class="countdown-card" aria-live="polite"></div>
+
+        <section class="section-card road-update-card" aria-labelledby="road-update-title">
+          <div class="section-heading">
+            <div><span class="section-kicker">Shared from the road</span><h2 id="road-update-title">Latest from the road</h2><p id="road-update-mode-note" class="section-intro"></p></div>
+            <button id="add-road-update-button" class="primary-button compact-button" type="button" data-action="add-road-update">Post update</button>
+          </div>
+          <div id="road-update-list" class="road-update-list" aria-live="polite"></div>
+        </section>
 
         <div class="dashboard-grid">
           <section class="section-card dashboard-primary" aria-labelledby="next-up-title">
@@ -207,7 +221,7 @@
 
         <section id="drive-log-card" class="section-card drive-log-card" aria-labelledby="drive-log-title" hidden>
           <div class="section-heading drive-log-heading">
-            <div><span class="section-kicker">Shared journey</span><h2 id="drive-log-title">Driving log</h2><p class="section-intro">Record each stretch and driver change. Every profile on this device sees the same log.</p></div>
+            <div><span class="section-kicker">Shared journey</span><h2 id="drive-log-title">Driving log</h2><p class="section-intro">Record each stretch and driver change. Every profile sees it locally, and family devices receive it when Shared Trip is connected.</p></div>
             <span id="drive-log-day-summary" class="progress-label"></span>
           </div>
           <div class="drive-log-actions">
@@ -293,15 +307,46 @@
         <div class="page-intro">
           <span class="section-kicker">Profiles, privacy, and app data</span>
           <h1 id="settings-title">Settings</h1>
-          <p>Road Companion is offline-first. Personal data stays on this device unless you export it.</p>
+          <p>Road Companion remains offline-first. Shared records sync when connected; private stay details and notes remain on this device.</p>
         </div>
 
         <div class="settings-grid">
+          <section id="shared-sync-card" class="section-card shared-sync-card" aria-labelledby="shared-sync-title">
+            <div class="section-heading"><div><span class="section-kicker">Private family sharing</span><h2 id="shared-sync-title">Shared Trip sync</h2></div><span id="sync-summary" class="progress-label">Not connected</span></div>
+            <div id="sync-disconnected">
+              <p class="supporting-copy">Start the shared trip on the primary device, or join with a one-use family code from the owner. Existing local records are merged.</p>
+              <div class="button-stack">
+                <button id="sync-start-button" class="primary-button" type="button">Start this shared trip</button>
+                <label class="field-label" for="sync-join-code">Family invitation code</label>
+                <input id="sync-join-code" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="80" placeholder="Paste the one-use code">
+                <button id="sync-join-button" class="secondary-button" type="button">Join with family code</button>
+              </div>
+            </div>
+            <div id="sync-connected" hidden>
+              <div class="sync-identity"><span><strong id="sync-trip-name">Northwest Adventure 2026</strong><small id="sync-role-label">Family contributor</small></span></div>
+              <button id="sync-now-button" class="primary-button full-width" type="button">Sync now</button>
+              <div id="sync-owner-tools" class="sync-owner-tools" hidden>
+                <p class="fine-print">Create a separate one-use code for each contributing device. Viewer links are read-only and never expose private journals, confirmations, or stay notes.</p>
+                <div class="two-column-actions">
+                  <button id="sync-family-invite-button" class="secondary-button" type="button">New family code</button>
+                  <button id="sync-viewer-link-button" class="secondary-button" type="button">New viewer link</button>
+                </div>
+                <div id="sync-share-wrap" class="sync-share-wrap" hidden>
+                  <label id="sync-share-label" class="field-label" for="sync-share-output">Invitation</label>
+                  <textarea id="sync-share-output" rows="3" readonly></textarea>
+                  <div class="two-column-actions"><button id="sync-copy-button" class="secondary-button" type="button">Copy</button><button id="sync-share-button" class="primary-button" type="button">Share</button></div>
+                </div>
+              </div>
+            </div>
+            <p id="sync-activity" class="fine-print" aria-live="polite"></p>
+            <p id="sync-error" class="sync-error" role="alert" hidden></p>
+          </section>
+
           <section class="section-card" aria-labelledby="profiles-title">
             <div class="section-heading"><div><span class="section-kicker">Adventure Mode</span><h2 id="profiles-title">Profiles</h2></div></div>
             <div id="profile-list" class="profile-list"></div>
             <button class="secondary-button full-width" type="button" data-action="add-profile">Add traveller</button>
-            <p class="fine-print">There is no fixed family-size limit. Names, experience styles, and each traveller’s records are stored locally.</p>
+            <p class="fine-print">There is no fixed family-size limit. Names, initials, colours, experience styles, and traveller records are included in Shared Trip sync.</p>
           </section>
 
           <section class="section-card" aria-labelledby="update-title">
@@ -311,11 +356,11 @@
               <button class="primary-button" type="button" data-action="refresh-app">Refresh app now</button>
               <button class="secondary-button" type="button" data-action="check-update">Check for update</button>
             </div>
-            <p class="version-line">Version <strong id="app-version">0.4.0 RC2.1</strong> · built <span id="build-date">2026-07-30</span></p>
+            <p class="version-line">Version <strong id="app-version">0.4.0 RC3</strong> · built <span id="build-date">2026-07-31</span></p>
           </section>
 
           <section class="section-card" aria-labelledby="editable-itinerary-title">
-            <div class="section-heading"><div><span class="section-kicker">Stored on this device</span><h2 id="editable-itinerary-title">Editable itinerary</h2></div></div>
+            <div class="section-heading"><div><span class="section-kicker">Offline-first and shared</span><h2 id="editable-itinerary-title">Editable itinerary</h2></div></div>
             <p id="itinerary-settings-summary" class="supporting-copy">No local itinerary edits yet.</p>
             <p id="itinerary-settings-details" class="fine-print">Published day plans and stay details are in use.</p>
             <div class="button-stack">
@@ -350,7 +395,7 @@
 
           <section class="privacy-note" aria-label="Privacy note">
             <strong>Private by design</strong>
-            <p>No account, advertising, analytics, or server database. Each phone or iPad keeps its own progress unless a backup is moved manually.</p>
+            <p>No advertising or analytics. Shared Trip uses private membership and record-level syncing. Confirmation numbers, stay notes, private day notes, and general notes remain local and appear only in a backup file when you deliberately export one.</p>
           </section>
         </div>
       </section>
@@ -508,7 +553,14 @@
       </div>
       <input id="profile-id" name="profileId" type="hidden">
       <div class="form-grid">
-        <label>Display name<input id="profile-display-name" name="displayName" type="text" maxlength="30" autocomplete="off"></label>
+        <div class="two-column-fields">
+          <label>Display name<input id="profile-display-name" name="displayName" type="text" maxlength="30" autocomplete="off"></label>
+          <label>Initials<input id="profile-custom-initials" name="initials" type="text" maxlength="3" autocomplete="off" autocapitalize="characters" placeholder="Cl"></label>
+        </div>
+        <fieldset class="profile-colour-fieldset">
+          <legend>Profile colour</legend>
+          <div id="profile-accent-options" class="profile-accent-options"></div>
+        </fieldset>
         <fieldset class="experience-fieldset">
           <legend>Experience style</legend>
           <label class="choice-card"><input type="radio" name="experience" value="navigator"><span><strong>Navigator</strong><small>Independent tone, deeper prompts, route and photography tasks.</small></span></label>
@@ -517,6 +569,32 @@
         </fieldset>
       </div>
       <div class="dialog-actions"><button class="secondary-button" type="button" data-action="close-profile-dialog">Cancel</button><button class="primary-button" type="submit">Save profile</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="road-update-dialog" class="modal-dialog compact-dialog">
+    <form id="road-update-form" method="dialog">
+      <div class="dialog-header">
+        <div><span class="section-kicker">Latest from the road</span><h2>Post a travel update</h2></div>
+        <button class="icon-button" type="button" data-action="close-road-update-dialog" aria-label="Close">×</button>
+      </div>
+      <input id="road-update-day-id" type="hidden">
+      <div class="form-grid">
+        <p id="road-update-author" class="fine-print"></p>
+        <label>Update type
+          <select id="road-update-kind" required>
+            <option value="departed">Departed</option>
+            <option value="arrived">Arrived</option>
+            <option value="delayed">Delayed</option>
+            <option value="changed">Changed plans</option>
+            <option value="great-stop">Great stop</option>
+            <option value="note" selected>Road note</option>
+          </select>
+        </label>
+        <label>Message<textarea id="road-update-message" rows="4" maxlength="500" placeholder="A short update for family following along…"></textarea></label>
+        <p class="fine-print">Viewer links receive this update. Do not include confirmation numbers, private contact details, or an exact live location you do not want shared.</p>
+      </div>
+      <div class="dialog-actions"><button class="secondary-button" type="button" data-action="close-road-update-dialog">Cancel</button><button class="primary-button" type="submit">Post update</button></div>
     </form>
   </dialog>
 
@@ -570,7 +648,10 @@
       }
     });
   </script>
-  <script src="road-data.js?v=0.4.0-rc2.1"></script>
-  <script src="app.js?v=0.4.0-rc2.1"></script>
+  <script src="road-data.js?v=0.4.0-rc3"></script>
+  <script src="vendor/supabase-client.js?v=2.111.0"></script>
+  <script src="sync-config.js?v=0.4.0-rc3"></script>
+  <script src="app.js?v=0.4.0-rc3"></script>
+  <script src="sync.js?v=0.4.0-rc3"></script>
 </body>
 </html>

@@ -1,8 +1,8 @@
 {
   "app": "Bobsx4 Road Companion",
-  "version": "0.4.0 RC2.1",
-  "versionCode": "0.4.0-rc2.1",
-  "buildDate": "2026-07-30",
-  "dataSchema": 5,
+  "version": "0.4.0 RC3",
+  "versionCode": "0.4.0-rc3",
+  "buildDate": "2026-07-31",
+  "dataSchema": 6,
   "channel": "release-candidate"
 }

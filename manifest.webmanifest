@@ -1,7 +1,7 @@
 {
   "name": "Bobsx4 Road Companion",
   "short_name": "Road Companion",
-  "description": "Offline-first family travel companion with an editable itinerary, unlimited profiles, Road Crew driving log, journals, badges, and scrapbook.",
+  "description": "Offline-first family travel companion with private Shared Trip sync, read-only road updates, editable itinerary, profiles, driving log, journals, and scrapbook.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
