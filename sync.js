@@ -337,6 +337,7 @@
     if (!pending.length) return;
     for (let index = 0; index < pending.length; index += 50) {
       const batch = pending.slice(index, index + 50);
+      const sentById = new Map(batch.map((item) => [item.recordId, item]));
       const { data, error } = await client
         .from("rc_records")
         .upsert(batch.map(remoteRow), { onConflict: "trip_id,record_id" })
@@ -344,7 +345,11 @@
       if (error) throw error;
       (data || []).forEach((saved) => {
         const queued = syncState.outbox[saved.record_id];
-        if (queued?.clientUpdatedAt === saved.client_updated_at) delete syncState.outbox[saved.record_id];
+        const sent = sentById.get(saved.record_id);
+        // PostgreSQL may serialize the same timestamp with +00:00 while the
+        // browser queued it with Z. Compare against the exact item sent so a
+        // successful save drains the outbox without discarding a newer edit.
+        if (queued?.clientUpdatedAt === sent?.clientUpdatedAt) delete syncState.outbox[saved.record_id];
         syncState.meta[saved.record_id] = {
           clientUpdatedAt: saved.client_updated_at,
           remoteVersion: Number(saved.version) || 1,
